@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditorium: Ear Trainer - Identificació d'Intervals Musicals</title>
+    <!-- Càrrega de Tailwind CSS per a un disseny responsive i ràpid -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Configuració de la tipografia i colors professionals */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Un blanc trencat/gris clar */
+        }
+        /* Estil per al botó de reproducció, per fer-lo destacar */
+        #playButton {
+            transition: all 0.1s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+        }
+        #playButton:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3), 0 4px 6px -4px rgba(59, 130, 246, 0.2);
+        }
+        /* Estil per a la barra de temps */
+        #progressBar {
+            transition: width 0.9s linear;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+    <!-- Contenidor principal de l'aplicació -->
+    <div id="appContainer" class="bg-white shadow-2xl rounded-xl w-full max-w-4xl p-8 md:p-12 border border-gray-200">
+
+        <!-- Header/Títol (Visible en totes les pantalles) -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">Auditorium</h1>
+            <p class="text-xl text-blue-600 font-semibold mt-1">Identificació d'Intervals</p>
+        </header>
+
+        <!-- PANTALLA 1: SELECCIÓ DE DIFICULTAT -->
+        <div id="difficultyScreen">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Selecciona el Nivell de Dificultat</h2>
+            <div class="space-y-4 max-w-lg mx-auto">
+                <button onclick="startGame('easy')" class="w-full py-4 px-6 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-150 shadow-md">
+                    Fàcil (Uníson, 2M, 3M, 4J, 5J - Ascendents)
+                </button>
+                <button onclick="startGame('medium')" class="w-full py-4 px-6 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-150 shadow-md">
+                    Intermedi (Fàcil + 6M, 7M, 8J - Ascendents)
+                </button>
+                <button onclick="startGame('hard')" class="w-full py-4 px-6 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-150 shadow-md">
+                    Difícil (Tots els 12 Intervals - Ascendent, Descendent, Harmònic)
+                </button>
+            </div>
+            <p class="text-center text-sm text-gray-500 mt-6">Assegura't que els arxius d'àudio MP3 es trobin a la carpeta **`/audio/`**.</p>
+        </div>
+
+        <!-- PANTALLA 2: JOC / QUIZ -->
+        <div id="quizScreen" class="hidden">
+            <!-- Puntuació i Temporitzador -->
+            <div class="flex justify-between items-center mb-6 border-b pb-4">
+                <div class="text-xl font-medium text-gray-700">Ronda: <span id="roundCount" class="font-bold text-blue-600">1</span></div>
+                <div class="text-xl font-medium text-gray-700">Puntuació: <span id="score" class="font-bold text-blue-600">0</span></div>
+            </div>
+
+            <!-- Àrea de Reproducció i Temporitzador Visual -->
+            <div class="text-center mb-8">
+                <button id="playButton" class="bg-blue-600 text-white p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 hover:bg-blue-700 transition duration-200 focus:outline-none">
+                    <!-- Icona de reproducció (SVG) -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+                <p id="directionLabel" class="text-lg font-semibold text-gray-600 mb-4"></p>
+
+                <!-- Barra de progrés del temporitzador (30 segons) -->
+                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                    <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full" style="width: 100%"></div>
+                </div>
+                <p class="text-sm text-gray-500 mt-2">Temps restant per escoltar: <span id="timeRemaining">30</span>s</p>
+            </div>
+
+            <!-- Botons d'Opció d'Interval (Es generaran per JS) -->
+            <div id="intervalOptions" class="grid gap-3 mt-8" style="grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));">
+                <!-- Botons injectats aquí -->
+            </div>
+            
+            <!-- Missatge de retroalimentació (Feedback) -->
+            <div id="feedbackMessage" class="mt-6 text-center text-lg font-bold min-h-6"></div>
+
+            <!-- Botó de següent ronda (inicialment amagat) -->
+            <button id="nextRoundButton" onclick="loadNextRound()" class="hidden w-full py-3 mt-6 bg-gray-800 text-white font-semibold rounded-lg hover:bg-gray-700 transition duration-150 shadow-lg">
+                Següent Ronda
+            </button>
+        </div>
+
+        <!-- PANTALLA 3: RESULTATS FINALS -->
+        <div id="resultScreen" class="hidden text-center">
+            <h2 class="text-3xl font-bold text-gray-800 mb-4">Resultats Finals</h2>
+            <p class="text-xl text-gray-600 mb-6">Has completat la pràctica!</p>
+            <p class="text-4xl font-extrabold text-blue-600 mb-8">Puntuació Final: <span id="finalScore">0</span></p>
+
+            <button onclick="resetGame()" class="w-full py-4 px-6 bg-gray-800 text-white font-semibold rounded-lg hover:bg-blue-600 transition duration-150 shadow-md">
+                Tornar a començar
+            </button>
+        </div>
+
+    </div>
+
+    <!-- LÒGICA JAVASCRIPT -->
+    <script>
+        // ===============================================
+        // VARIABLES GLOBALS I CONFIGURACIÓ
+        // ===============================================
+
+        const AUDIO_PATH = '/audio/'; // Carpeta on es troben els MP3
+        const MIDI_START = 57; // A3 (Nota més baixa)
+        const MIDI_END = 72;   // C5 (Nota més alta)
+        const TIMER_DURATION = 30; // Temps en segons
+
+        // Mapa de semitons a noms d'intervals (per a opcions i resposta)
+        const INTERVAL_NAMES = {
+            0: 'Uníson', 1: '2a menor (m2)', 2: '2a Major (M2)', 3: '3a menor (m3)',
+            4: '3a Major (M3)', 5: '4a Justa (4J)', 6: '4a Aug/5a Dim (Tríton)',
+            7: '5a Justa (5J)', 8: '6a menor (m6)', 9: '6a Major (M6)',
+            10: '7a menor (m7)', 11: '7a Major (M7)', 12: '8a Justa (8J)'
+        };
+
+        // Configuració dels nivells de dificultat (en semitons)
+        const DIFFICULTY_CONFIG = {
+            easy: {
+                intervals: [0, 2, 4, 5, 7], // Uníson, 2M, 3M, 4J, 5J
+                allOptions: [0, 2, 4, 5, 7],
+                directions: ['Ascendent']
+            },
+            medium: {
+                intervals: [0, 2, 4, 5, 7, 9, 11, 12], // + 6M, 7M, 8J
+                allOptions: [0, 2, 4, 5, 7, 9, 11, 12],
+                directions: ['Ascendent']
+            },
+            hard: {
+                intervals: Object.keys(INTERVAL_NAMES).map(Number), // Tots (0 a 12)
+                allOptions: Object.keys(INTERVAL_NAMES).map(Number),
+                directions: ['Ascendent', 'Descendent', 'Harmònic']
+            }
+        };
+        
+        // Estats del joc
+        let gameState = {
+            difficulty: null,
+            score: 0,
+            round: 0,
+            correctIntervalSemitones: null,
+            timer: null,
+            timeRemaining: TIMER_DURATION,
+            currentDirection: null,
+            isAnswered: false,
+            audioBase: null,
+            audioInterval: null,
+            currentInterval: null,
+        };
+
+        // Referències al DOM
+        const screens = {
+            difficulty: document.getElementById('difficultyScreen'),
+            quiz: document.getElementById('quizScreen'),
+            result: document.getElementById('resultScreen')
+        };
+        const elements = {
+            roundCount: document.getElementById('roundCount'),
+            score: document.getElementById('score'),
+            playButton: document.getElementById('playButton'),
+            progressBar: document.getElementById('progressBar'),
+            timeRemaining: document.getElementById('timeRemaining'),
+            intervalOptions: document.getElementById('intervalOptions'),
+            feedbackMessage: document.getElementById('feedbackMessage'),
+            nextRoundButton: document.getElementById('nextRoundButton'),
+            directionLabel: document.getElementById('directionLabel'),
+            finalScore: document.getElementById('finalScore')
+        };
+
+
+        // ===============================================
+        // UTILS D'ÀUDIO I MIDI
+        // ===============================================
+
+        /**
+         * Converteix un número MIDI a nom de fitxer MP3 (ex: 60 -> C4.mp3)
+         * @param {number} midiNumber - El número MIDI (57-72).
+         * @returns {string} El nom del fitxer (incloent la ruta).
+         */
+        function getFileName(midiNumber) {
+            // L'usuari ha confirmat que utilitza 's' per als sostinguts (As3.mp3, Cs4.mp3, etc.)
+            const notes = ['C', 'Cs', 'D', 'Ds', 'E', 'F', 'Fs', 'G', 'Gs', 'A', 'As', 'B'];
+            const octave = Math.floor(midiNumber / 12) - 1;
+            const noteIndex = midiNumber % 12;
+            const noteName = notes[noteIndex];
+            
+            // Retorna el nom del fitxer amb la convenció 'XsY.mp3'.
+            // S'eliminen les substitucions de cadena anteriors que transformaven 's' en '#',
+            // que eren la causa del NotSupportedError.
+            return `${AUDIO_PATH}${noteName}${octave}.mp3`;
+        }
+
+        /**
+         * Reprodueix l'interval generat segons la direcció.
+         */
+        function playInterval() {
+            if (!gameState.audioBase || !gameState.audioInterval) {
+                elements.feedbackMessage.textContent = 'Error: No s\'ha pogut carregar l\'àudio. Comprova la ruta.';
+                return;
+            }
+
+            // Aturar àudios anteriors si estan sonant
+            gameState.audioBase.pause();
+            gameState.audioInterval.pause();
+            gameState.audioBase.currentTime = 0;
+            gameState.audioInterval.currentTime = 0;
+
+            const direction = gameState.currentDirection;
+            
+            if (direction === 'Ascendent') {
+                gameState.audioBase.play();
+                setTimeout(() => gameState.audioInterval.play(), 600); // 0.6s de separació
+            } else if (direction === 'Descendent') {
+                gameState.audioInterval.play();
+                setTimeout(() => gameState.audioBase.play(), 600); // 0.6s de separació
+            } else if (direction === 'Harmònic') {
+                gameState.audioBase.play();
+                gameState.audioInterval.play(); // Sonen simultàniament
+            } else {
+                // Per a Uníson, sempre sonen simultàniament
+                gameState.audioBase.play();
+            }
+        }
+
+
+        // ===============================================
+        // LÒGICA DEL JOC
+        // ===============================================
+
+        /**
+         * Canvia la pantalla visible.
+         * @param {string} screenId - ID de la pantalla a mostrar ('difficulty', 'quiz', 'result').
+         */
+        function showScreen(screenId) {
+            Object.values(screens).forEach(screen => screen.classList.add('hidden'));
+            screens[screenId].classList.remove('hidden');
+        }
+
+        /**
+         * Inicialitza el joc i la primera ronda.
+         * @param {string} difficulty - Nivell seleccionat ('easy', 'medium', 'hard').
+         */
+        function startGame(difficulty) {
+            gameState.difficulty = difficulty;
+            gameState.score = 0;
+            gameState.round = 0;
+            elements.score.textContent = gameState.score;
+            
+            showScreen('quiz');
+            loadNextRound();
+        }
+
+        /**
+         * Genera un interval aleatori basat en el nivell de dificultat.
+         */
+        function generateInterval() {
+            const config = DIFFICULTY_CONFIG[gameState.difficulty];
+            const availableIntervals = config.intervals;
+
+            // 1. Selecciona un interval aleatori (en semitons)
+            const intervalSemitones = availableIntervals[Math.floor(Math.random() * availableIntervals.length)];
+
+            // 2. Determina la direcció (només per al nivell difícil i no per a uníson)
+            let direction = 'Ascendent';
+            if (gameState.difficulty === 'hard' && intervalSemitones !== 0) {
+                direction = config.directions[Math.floor(Math.random() * config.directions.length)];
+            } else if (intervalSemitones === 0) {
+                direction = 'Harmònic'; // Uníson sempre és simultani
+            }
+            
+            // 3. Selecciona la nota base (ha de permetre que l'interval resulti en el rang)
+            let maxBaseMIDI = MIDI_END;
+            if (direction === 'Ascendent' || direction === 'Harmònic') {
+                maxBaseMIDI = MIDI_END - intervalSemitones;
+            } else if (direction === 'Descendent') {
+                maxBaseMIDI = MIDI_END; // La nota interval serà més baixa
+            }
+
+            const baseMIDI = MIDI_START + Math.floor(Math.random() * (maxBaseMIDI - MIDI_START + 1));
+            
+            // 4. Calcula la nota d'interval
+            let intervalMIDI;
+            if (direction === 'Ascendent' || direction === 'Harmònic') {
+                intervalMIDI = baseMIDI + intervalSemitones;
+            } else if (direction === 'Descendent') {
+                intervalMIDI = baseMIDI - intervalSemitones;
+            }
+            // Per al nivell difícil descendet, la nota base pot estar a dalt, i la d'interval a baix
+            // Per simplificació i per mantenir la nota base com la primera a tocar (o la més baixa en harmònic)
+            // Lògica ajustada: BaseMIDI sempre és la nota més baixa per a Ascendent/Harmònic
+            // Per a Descendent, la nota més ALTA ha de ser baseMIDI (base per al descens)
+            
+            if (direction === 'Descendent') {
+                // Nota base alta, nota interval baixa
+                const highNoteMIDI = MIDI_START + intervalSemitones + Math.floor(Math.random() * (MIDI_END - (MIDI_START + intervalSemitones) + 1));
+                intervalMIDI = highNoteMIDI - intervalSemitones;
+                
+                // Reassignar per la funció de reproducció (base ha de ser la primera a sonar)
+                // L'àudio base és la nota ALTA, l'àudio interval és la nota BAIXA
+                const baseFile = getFileName(highNoteMIDI);
+                const intervalFile = getFileName(intervalMIDI);
+
+                return {
+                    correctIntervalSemitones: intervalSemitones,
+                    direction: direction,
+                    audioBaseFile: baseFile,
+                    audioIntervalFile: intervalFile,
+                    label: `${INTERVAL_NAMES[intervalSemitones]} (${direction})`
+                };
+
+            } else {
+                // Ascendent o Harmònic: Nota base baixa, nota interval alta (o igual)
+                const baseFile = getFileName(baseMIDI);
+                const intervalFile = getFileName(intervalMIDI);
+                
+                return {
+                    correctIntervalSemitones: intervalSemitones,
+                    direction: direction,
+                    audioBaseFile: baseFile,
+                    audioIntervalFile: intervalFile,
+                    label: `${INTERVAL_NAMES[intervalSemitones]} (${direction})`
+                };
+            }
+        }
+
+        /**
+         * Inicialitza una nova ronda de joc.
+         */
+        function loadNextRound() {
+            gameState.round++;
+            gameState.isAnswered = false;
+            
+            // Neteja l'estat anterior
+            elements.feedbackMessage.textContent = '';
+            elements.nextRoundButton.classList.add('hidden');
+            elements.roundCount.textContent = gameState.round;
+            elements.playButton.disabled = false;
+            elements.playButton.classList.remove('opacity-50');
+
+            // 1. Genera un nou interval i carrega l'àudio
+            gameState.currentInterval = generateInterval();
+            gameState.correctIntervalSemitones = gameState.currentInterval.correctIntervalSemitones;
+            gameState.currentDirection = gameState.currentInterval.direction;
+
+            gameState.audioBase = new Audio(gameState.currentInterval.audioBaseFile);
+            gameState.audioInterval = new Audio(gameState.currentInterval.audioIntervalFile);
+
+            elements.directionLabel.textContent = `Direcció: ${gameState.currentDirection}`;
+            
+            // 2. Genera els botons d'opció
+            generateOptions(DIFFICULTY_CONFIG[gameState.difficulty].allOptions);
+
+            // 3. Inicialitza el temporitzador
+            startTimer();
+        }
+
+        /**
+         * Genera els botons d'opció de resposta.
+         * @param {Array<number>} availableOptions - Llista de semitons per mostrar com a opcions.
+         */
+        function generateOptions(availableOptions) {
+            elements.intervalOptions.innerHTML = ''; // Neteja els botons anteriors
+
+            // Barreja les opcions per evitar l'aprenentatge basat en la posició
+            availableOptions.sort(() => Math.random() - 0.5);
+
+            availableOptions.forEach(semitones => {
+                const name = INTERVAL_NAMES[semitones];
+                const button = document.createElement('button');
+                button.textContent = name;
+                button.setAttribute('data-semitones', semitones);
+                button.onclick = () => checkAnswer(semitones, button);
+                button.classList.add('py-3', 'px-4', 'bg-gray-200', 'text-gray-800', 'font-semibold', 'rounded-lg', 'shadow-sm', 'hover:bg-blue-200', 'transition', 'duration-150', 'text-sm', 'md:text-base');
+                elements.intervalOptions.appendChild(button);
+            });
+        }
+
+        /**
+         * Comprova si la resposta de l'usuari és correcta.
+         * @param {number} selectedSemitones - Els semitons de l'interval seleccionat.
+         * @param {HTMLElement} selectedButton - El botó que l'usuari ha premut.
+         */
+        function checkAnswer(selectedSemitones, selectedButton) {
+            if (gameState.isAnswered) return; // Evita respostes múltiples
+
+            clearInterval(gameState.timer); // Atura el temps
+            gameState.isAnswered = true;
+            elements.playButton.disabled = true;
+            elements.playButton.classList.add('opacity-50');
+
+            const isCorrect = selectedSemitones === gameState.correctIntervalSemitones;
+
+            // Deshabilita tots els botons d'opció
+            Array.from(elements.intervalOptions.children).forEach(btn => {
+                btn.disabled = true;
+                btn.classList.remove('hover:bg-blue-200', 'bg-gray-200');
+                btn.classList.add('cursor-not-allowed', 'opacity-80');
+
+                const currentSemitones = parseInt(btn.getAttribute('data-semitones'));
+
+                if (currentSemitones === gameState.correctIntervalSemitones) {
+                    // Marca la resposta correcta en verd
+                    btn.classList.add('bg-green-500', 'text-white', 'font-bold');
+                } else if (btn === selectedButton) {
+                    // Marca la resposta incorrecta en vermell
+                    btn.classList.add('bg-red-500', 'text-white', 'font-bold');
+                }
+            });
+
+            if (isCorrect) {
+                gameState.score++;
+                elements.score.textContent = gameState.score;
+                elements.feedbackMessage.textContent = '✅ Correcte! ' + gameState.currentInterval.label;
+                elements.feedbackMessage.classList.remove('text-red-600');
+                elements.feedbackMessage.classList.add('text-green-600');
+            } else {
+                elements.feedbackMessage.textContent = '❌ Incorrecte. La resposta era: ' + gameState.currentInterval.label;
+                elements.feedbackMessage.classList.remove('text-green-600');
+                elements.feedbackMessage.classList.add('text-red-600');
+            }
+
+            elements.nextRoundButton.classList.remove('hidden');
+        }
+
+        /**
+         * Inicialitza el compte enrere de 30 segons.
+         */
+        function startTimer() {
+            gameState.timeRemaining = TIMER_DURATION;
+            elements.timeRemaining.textContent = TIMER_DURATION;
+            elements.progressBar.style.width = '100%';
+            
+            if (gameState.timer) clearInterval(gameState.timer);
+
+            gameState.timer = setInterval(() => {
+                gameState.timeRemaining--;
+                elements.timeRemaining.textContent = gameState.timeRemaining;
+                
+                const percentage = (gameState.timeRemaining / TIMER_DURATION) * 100;
+                elements.progressBar.style.width = `${percentage}%`;
+
+                if (gameState.timeRemaining <= 0) {
+                    clearInterval(gameState.timer);
+                    if (!gameState.isAnswered) {
+                        // Si el temps s'esgota sense resposta
+                        elements.feedbackMessage.textContent = '⏱️ Temps esgotat!';
+                        elements.feedbackMessage.classList.remove('text-green-600');
+                        elements.feedbackMessage.classList.add('text-red-600');
+                        elements.nextRoundButton.classList.remove('hidden');
+                        gameState.isAnswered = true;
+
+                        // Marca la resposta correcta
+                        Array.from(elements.intervalOptions.children).forEach(btn => {
+                            if (parseInt(btn.getAttribute('data-semitones')) === gameState.correctIntervalSemitones) {
+                                btn.classList.add('bg-green-500', 'text-white', 'font-bold');
+                            }
+                            btn.disabled = true;
+                            btn.classList.add('cursor-not-allowed', 'opacity-80');
+                        });
+                    }
+                }
+            }, 1000); // 1000ms = 1 segon
+        }
+
+        /**
+         * Tanca el joc i mostra la pantalla de resultats.
+         */
+        function endGame() {
+            clearInterval(gameState.timer);
+            elements.finalScore.textContent = gameState.score;
+            showScreen('result');
+        }
+        
+        /**
+         * Reinicia el joc a la pantalla de selecció de dificultat.
+         */
+        function resetGame() {
+            clearInterval(gameState.timer);
+            showScreen('difficulty');
+            gameState.score = 0;
+            gameState.round = 0;
+        }
+
+
+        // ===============================================
+        // INICIALITZACIÓ
+        // ===============================================
+
+        // Assigna l'esdeveniment al botó de reproducció un cop carregat el DOM
+        window.onload = function() {
+            // El botó de reproducció només és visible a la pantalla del quiz
+            elements.playButton.onclick = playInterval; 
+            
+            // Podries afegir una lògica per canviar a endGame() després de 10 rondes (per exemple)
+            // Per simplicitat, el joc no acaba automàticament.
+        };
+
+    </script>
+
+</body>
+</html>
