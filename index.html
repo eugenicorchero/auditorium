@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Intervally: Entrenador d'Intervals Musicals</title>
+    <title>Auditorum: Entrenador d'Intervals Musicals</title>
     <!-- Càrrega de Tailwind CSS per a un disseny responsive i ràpid -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -17,7 +17,7 @@
         /* Estil per al botó de reproducció, per fer-lo destacar */
         #playButton {
             transition: all 0.1s ease;
-            /* Utilitzem un ombrejat Blau, com el color dels botons d'Intervally */
+            /* Utilitzem un ombrejat Blau, com el color dels botons d'Auditorum */
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
         }
         /* Utilitzem un ombrejat Blau en l'estat hover */
@@ -90,8 +90,8 @@
 
         <!-- Header/Títol -->
         <header class="text-center mb-8 border-b border-blue-600 pb-4">
-            <!-- Títol principal de la imatge -->
-            <h1 class="text-4xl font-extrabold text-white tracking-tight">Intervally</h1>
+            <!-- Títol principal de la imatge: RESTAURAT A AUDITORUM -->
+            <h1 class="text-4xl font-extrabold text-white tracking-tight">Auditorum</h1>
             <!-- Subtítol amb color blau vibrant -->
             <p class="text-xl text-blue-400 font-semibold mt-1">Entrenador d'Intervals Musicals</p>
         </header>
@@ -102,18 +102,18 @@
             <p class="text-gray-400 text-center mb-8 max-w-xl mx-auto">Practica la identificació d'intervals musicals de forma visual. Selecciona un nivell de dificultat per començar. Recorda que tens 30 segons per a cada resposta.</p>
 
             <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-                <!-- Botons amb el color Blau Fosc -->
+                <!-- Botons amb el color Blau Fosc i descripcions actualitzades -->
                 <button onclick="startGame('easy')" class="difficulty-button text-white font-semibold rounded-lg hover:brightness-110 p-6 flex flex-col items-center text-center">
-                    <span class="text-xl font-bold mb-2">Inicial</span>
-                    <span class="text-sm opacity-90">Uníson, 2a M, 3a M, 4a J, 5a J, 6a M, 7a M, 8a J — sense sostinguts ni bemolls (Ascendent)</span>
+                    <span class="text-xl font-bold mb-2">Fàcil</span>
+                    <span class="text-sm opacity-90">Intervals: Uníson, 2a M, 3a M, 4a J, 5a J (Ascendent)</span>
                 </button>
                 <button onclick="startGame('medium')" class="difficulty-button text-white font-semibold rounded-lg hover:brightness-110 p-6 flex flex-col items-center text-center">
-                    <span class="text-xl font-bold mb-2">Intermedi</span>
-                    <span class="text-sm opacity-90">Tots els Intervals fins a 8a J, incloent menors i augmentats/disminuïts (Ascendent/Descendent)</span>
+                    <span class="text-xl font-bold mb-2">Mitjà</span>
+                    <span class="text-sm opacity-90">Intervals Majors i Justos (fins a 7a M) (Totes les direccions)</span>
                 </button>
                 <button onclick="startGame('hard')" class="difficulty-button text-white font-semibold rounded-lg hover:brightness-110 p-6 flex flex-col items-center text-center">
                     <span class="text-xl font-bold mb-2">Difícil</span>
-                    <span class="text-sm opacity-90">Tots els 12 Intervals de 0 a 12 (Ascendent, Descendent, Harmònic)</span>
+                    <span class="text-sm opacity-90">Tots els intervals cromàtics (Ascendent i Descendent)</span>
                 </button>
             </div>
         </div>
@@ -192,30 +192,37 @@
         // CACHE: Emmagatzemarà tots els objectes Audio ja carregats
         const audioCache = {};
 
-        // Mapa de semitons a noms d'intervals (per a opcions i resposta)
+        // Mapa de semitons a noms d'intervals (RESTAURAT a la llista de 13 intervals)
         const INTERVAL_NAMES = {
-            0: 'Uníson', 1: '2a menor (m2)', 2: '2a Major (M2)', 3: '3a menor (m3)',
-            4: '3a Major (M3)', 5: '4a Justa (4J)', 6: '4a Aug/5a Dim (Tríton)',
-            7: '5a Justa (5J)', 8: '6a menor (m6)', 9: '6a Major (M6)',
-            10: '7a menor (m7)', 11: '7a Major (M7)', 12: '8a Justa (8J)'
+            0: 'Uníson', 1: '2a menor', 2: '2a Major', 3: '3a menor',
+            4: '3a Major', 5: '4a Justa', 6: 'Tríton', // 4a Aug/5a Dim
+            7: '5a Justa', 8: '6a menor', 9: '6a Major',
+            10: '7a menor', 11: '7a Major', 12: '8a Justa'
         };
 
-        // Configuració dels nivells de dificultat (en semitons)
+        // Tots els 13 intervals (0 a 12 semitons)
+        const ALL_INTERVALS = Object.keys(INTERVAL_NAMES).map(Number);
+
+        // CONFIGURACIÓ ACTUALITZADA DELS NIVELLS DE DIFICULTAT
         const DIFFICULTY_CONFIG = {
             easy: {
-                intervals: [0, 2, 4, 5, 7, 9, 11, 12].filter(s => s !== 1 && s !== 3 && s !== 6 && s !== 8 && s !== 10), 
-                allOptions: [0, 2, 4, 5, 7, 9, 11, 12].filter(s => s !== 1 && s !== 3 && s !== 6 && s !== 8 && s !== 10),
+                // Intervals: Uníson, 2a M, 3a M, 4a J, 5a J (0, 2, 4, 5, 7)
+                intervals: [0, 2, 4, 5, 7], 
+                allOptions: ALL_INTERVALS,
                 directions: ['Ascendent']
             },
             medium: {
-                intervals: Object.keys(INTERVAL_NAMES).map(Number),
-                allOptions: Object.keys(INTERVAL_NAMES).map(Number),
-                directions: ['Ascendent', 'Descendent']
+                // Intervals: Uníson, 2a M, 3a M, 4a J, 5a J, 6a M, 7a M (0, 2, 4, 5, 7, 9, 11)
+                intervals: [0, 2, 4, 5, 7, 9, 11], 
+                allOptions: ALL_INTERVALS,
+                directions: ['Ascendent', 'Descendent', 'Harmònic'] // Totes les direccions
             },
             hard: {
-                intervals: Object.keys(INTERVAL_NAMES).map(Number), 
-                allOptions: Object.keys(INTERVAL_NAMES).map(Number),
-                directions: ['Ascendent', 'Descendent', 'Harmònic']
+                // Tots els 13 intervals cromàtics (0 a 12)
+                intervals: ALL_INTERVALS, // [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+                allOptions: ALL_INTERVALS,
+                // Ascendent o descendent
+                directions: ['Ascendent', 'Descendent'] 
             }
         };
         
@@ -260,7 +267,7 @@
 
 
         // ===============================================
-        // UTILS D'ÀUDIO I MIDI (REVERTIT A NOMENCLATURA 's')
+        // UTILS D'ÀUDIO I MIDI (MANTENINT NOMENCLATURA 's')
         // ===============================================
         
         /**
@@ -270,7 +277,7 @@
          * @returns {string} El nom del fitxer (incloent la ruta).
          */
         function getFileName(midiNumber) {
-            // Revertit a la nomenclatura 's' per als sostinguts
+            // MANTENIM la nomenclatura 's' per als sostinguts (As, Cs, etc.)
             const notes = ['C', 'Cs', 'D', 'Ds', 'E', 'F', 'Fs', 'G', 'Gs', 'A', 'As', 'B'];
             const octave = Math.floor(midiNumber / 12) - 1;
             const noteIndex = midiNumber % 12;
@@ -406,7 +413,7 @@
                 } else if (direction === 'Descendent') {
                     resetAndPlay(audioInterval); // Nota alta (sona primer)
                     setTimeout(() => resetAndPlay(audioBase), 600); // Nota baixa (sona segon)
-                } else if (direction === 'Harmònic' || gameState.currentInterval.correctIntervalSemitones === 0) {
+                } else if (direction === 'Harmònic' || gameState.correctIntervalSemitones === 0) {
                     resetAndPlay(audioBase);
                     resetAndPlay(audioInterval); // Sonen simultàniament
                 }
@@ -464,7 +471,7 @@
             let direction = 'Ascendent';
             if (intervalSemitones === 0) {
                 direction = 'Harmònic'; 
-            } else if (config.directions.length > 1) {
+            } else if (config.directions.length > 0) {
                 direction = config.directions[Math.floor(Math.random() * config.directions.length)];
             }
             
@@ -473,11 +480,15 @@
             
             // Determina les notes per tal que l'interval s'ajusti al rang
             if (direction === 'Ascendent' || direction === 'Harmònic') {
+                // Per a Ascendent/Harmònic: La nota base ha de ser prou baixa per afegir l'interval sense excedir MIDI_END
                 const maxBaseMIDI = MIDI_END - intervalSemitones;
+                // Assegura un rang mínim de notes bases (p. ex., de MIDI_START a maxBaseMIDI)
                 baseMIDI = MIDI_START + Math.floor(Math.random() * (maxBaseMIDI - MIDI_START + 1));
                 intervalMIDI = baseMIDI + intervalSemitones;
             } else if (direction === 'Descendent') {
+                // Per a Descendent: La nota d'interval ha de ser prou alta per restar l'interval sense ser inferior a MIDI_START
                 const minIntervalMIDI = MIDI_START + intervalSemitones;
+                // Assegura un rang mínim de notes (p. ex., de minIntervalMIDI a MIDI_END)
                 intervalMIDI = minIntervalMIDI + Math.floor(Math.random() * (MIDI_END - minIntervalMIDI + 1));
                 baseMIDI = intervalMIDI - intervalSemitones; 
             }
@@ -516,7 +527,7 @@
             
             elements.directionLabel.textContent = `Direcció: ${gameState.currentDirection}`;
             
-            // 2. Genera els botons d'opció
+            // 2. Genera els botons d'opció (mostrant sempre els 13 intervals com a opcions)
             generateOptions(DIFFICULTY_CONFIG[gameState.difficulty].allOptions);
 
             // 3. Inicialitza el temporitzador
@@ -542,7 +553,7 @@
                 button.textContent = name;
                 button.setAttribute('data-semitones', semitones);
                 button.onclick = () => checkAnswer(semitones, button);
-                // Classes actualitzades per a fons fosc i estil similar a Intervally
+                // Classes actualitzades per a fons fosc i estil similar a Auditorum
                 button.classList.add('py-3', 'px-4', 'bg-gray-700', 'text-gray-100', 'font-semibold', 'rounded-lg', 'shadow-sm', 'hover:bg-blue-600', 'hover:text-white', 'transition', 'duration-150', 'text-sm', 'md:text-base');
                 elements.intervalOptions.appendChild(button);
             });
@@ -663,7 +674,7 @@
         window.onload = function() {
             elements.playButton.onclick = playInterval; 
             elements.nextRoundButton.onclick = () => {
-                if (gameState.round >= 10) { 
+                if (gameState.round >= 10) { // Limitem a 10 rondes per al joc
                     endGame();
                 } else {
                     loadNextRound();
