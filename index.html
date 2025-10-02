@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auditorum: Entrenador d'Intervals Musicals</title>
+    <title>Auditorium: Entrenador d'Intervals Musicals</title>
     <!-- Càrrega de Tailwind CSS per a un disseny responsive i ràpid -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -88,32 +88,29 @@
             <p id="preloaderStatus" class="text-base text-gray-300"></p>
         </div>
 
-        <!-- Header/Títol -->
-        <header class="text-center mb-8 border-b border-blue-600 pb-4">
-            <!-- Títol principal de la imatge: RESTAURAT A AUDITORUM -->
-            <h1 class="text-4xl font-extrabold text-white tracking-tight">Auditorum</h1>
-            <!-- Subtítol amb color blau vibrant -->
-            <p class="text-xl text-blue-400 font-semibold mt-1">Entrenador d'Intervals Musicals</p>
-        </header>
-
         <!-- PANTALLA 1: SELECCIÓ DE DIFICULTAT -->
         <div id="difficultyScreen" class="opacity-0 transition-opacity duration-500">
+            <header class="text-center mb-8 border-b border-blue-600 pb-4">
+                <h1 class="text-4xl font-extrabold text-white tracking-tight">Auditorum</h1>
+                <p class="text-xl text-blue-400 font-semibold mt-1">Entrenador d'Intervals Musicals</p>
+            </header>
+
             <h2 class="text-2xl font-bold text-gray-100 mb-2 text-center">Benvingut/da! Tria el teu Nivell de Pràctica</h2>
             <p class="text-gray-400 text-center mb-8 max-w-xl mx-auto">Practica la identificació d'intervals musicals de forma visual. Selecciona un nivell de dificultat per començar. Recorda que tens 30 segons per a cada resposta.</p>
 
             <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-                <!-- Botons amb el color Blau Fosc i descripcions actualitzades -->
+                <!-- Botons amb el color Blau Fosc i descripcions actualitzades segons la teva petició -->
                 <button onclick="startGame('easy')" class="difficulty-button text-white font-semibold rounded-lg hover:brightness-110 p-6 flex flex-col items-center text-center">
                     <span class="text-xl font-bold mb-2">Fàcil</span>
-                    <span class="text-sm opacity-90">Intervals: Uníson, 2a M, 3a M, 4a J, 5a J (Ascendent)</span>
+                    <span class="text-sm opacity-90">Intervals: Uníson, 2a M, 3a M, 4a J, 5a J </span>
                 </button>
                 <button onclick="startGame('medium')" class="difficulty-button text-white font-semibold rounded-lg hover:brightness-110 p-6 flex flex-col items-center text-center">
                     <span class="text-xl font-bold mb-2">Mitjà</span>
-                    <span class="text-sm opacity-90">Intervals Majors i Justos (fins a 7a M) (Totes les direccions)</span>
+                    <span class="text-sm opacity-90">Intervals: Uníson, 2a M, 3a M, 4a J, 5a J, 6a M, 7a M, Octava </span>
                 </button>
                 <button onclick="startGame('hard')" class="difficulty-button text-white font-semibold rounded-lg hover:brightness-110 p-6 flex flex-col items-center text-center">
                     <span class="text-xl font-bold mb-2">Difícil</span>
-                    <span class="text-sm opacity-90">Tots els intervals cromàtics (Ascendent i Descendent)</span>
+                    <span class="text-sm opacity-90">Tots els intervals (Ascendent i Descendent)</span>
                 </button>
             </div>
         </div>
@@ -193,7 +190,7 @@
         // CACHE: Emmagatzemarà tots els objectes Audio ja carregats
         const audioCache = {};
 
-        // Mapa de semitons a noms d'intervals (RESTAURAT a la llista de 13 intervals)
+        // Mapa de semitons a noms d'intervals 
         const INTERVAL_NAMES = {
             0: 'Uníson', 1: '2a menor', 2: '2a Major', 3: '3a menor',
             4: '3a Major', 5: '4a Justa', 6: 'Tríton', // 4a Aug/5a Dim
@@ -213,8 +210,8 @@
                 directions: ['Ascendent']
             },
             medium: {
-                // Intervals: Uníson, 2a M, 3a M, 4a J, 5a J, 6a M, 7a M (0, 2, 4, 5, 7, 9, 11)
-                intervals: [0, 2, 4, 5, 7, 9, 11], 
+                // Intervals: Uníson, 2a M, 3a M, 4a J, 5a J, 6a M, 7a M, Octava (0, 2, 4, 5, 7, 9, 11, 12)
+                intervals: [0, 2, 4, 5, 7, 9, 11, 12], 
                 allOptions: ALL_INTERVALS,
                 directions: ['Ascendent', 'Descendent', 'Harmònic'] // Totes les direccions
             },
@@ -394,9 +391,6 @@
          * Reprodueix l'interval generat INSTANTÀNIAMENT utilitzant el CACHE.
          */
         function playInterval() {
-            // No comprovem isAudioReady aquí, ja que volem que el joc funcioni 
-            // amb els arxius que sí que s'han carregat, tot i l'advertència.
-
             // Obtenim els objectes Audio directament del cache utilitzant les claus MIDI
             const audioBase = audioCache[gameState.baseNoteMIDI];
             const audioInterval = audioCache[gameState.intervalNoteMIDI];
@@ -455,8 +449,6 @@
          * @param {string} difficulty - Nivell seleccionat ('easy', 'medium', 'hard').
          */
         function startGame(difficulty) {
-            // Nota: Ja no bloquegem aquí, confiem en que els fitxers carregats funcionaran
-            
             gameState.difficulty = difficulty;
             gameState.score = 0;
             gameState.round = 0;
