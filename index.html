@@ -73,7 +73,7 @@
     <div id="audioErrorPopup" class="audio-error-popup hidden bg-red-600 text-white p-3 rounded-lg shadow-xl max-w-xs transition duration-300 transform scale-100">
         <p class="font-bold mb-1">⚠️ Error de Precàrrega</p>
         <p id="audioErrorMessage" class="text-sm">No s'han pogut carregar tots els fitxers d'àudio.</p>
-        <p class="text-xs mt-1 opacity-80">Assegura't que tots els arxius de A3 a C5 (MIDI 57 a 72) existeixen a la carpeta `/audio` amb la nomenclatura correcta (ex: Cs4.mp3).</p>
+        <p class="text-xs mt-1 opacity-80">Assegura't que el path i la nomenclatura dels arxius sigui correcta (ex: C4.mp3, D#4.mp3).</p>
     </div>
 
     <!-- Contenidor principal de l'aplicació: Fosc i amb ombra subtil -->
@@ -142,7 +142,6 @@
             </div>
 
             <!-- Botons d'Opció d'Interval (Es generaran per JS) -->
-            <!-- Aquí s'aplicarà la nova lògica: només intervals rellevants -->
             <div id="intervalOptions" class="grid gap-3 mt-8" style="grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));">
                 <!-- Botons injectats aquí -->
             </div>
@@ -182,7 +181,13 @@
         // VARIABLES GLOBALS I CONFIGURACIÓ
         // ===============================================
 
-        const AUDIO_PATH = '/audio/'; // Carpeta on es troben els MP3
+        // *****************************************************************
+        // CORRECCIÓ 1: ÚS DE LA RUTA RAW DE GITHUB AMB LA TEVA ESTRUCTURA
+        // Utilitzem la ruta raw per garantir que els fitxers siguin accessibles.
+        // Assumim que la teva carpeta es diu 'audio' dins de 'auditorium'
+        // *****************************************************************
+        const AUDIO_PATH = 'https://raw.githubusercontent.com/eugenicorchero/auditorum/main/audio/'; 
+        
         const MIDI_START = 57; // A3 (Nota més baixa)
         const MIDI_END = 72;   // C5 (Nota més alta)
         const TOTAL_MIDI_NOTES = MIDI_END - MIDI_START + 1; // 16 notes
@@ -263,24 +268,52 @@
 
 
         // ===============================================
-        // UTILS D'ÀUDIO I MIDI (MANTENINT NOMENCLATURA 's')
+        // UTILS D'ÀUDIO I MIDI (CORRECCIÓ DE NOMENCLATURA)
         // ===============================================
         
         /**
-         * Converteix un número MIDI a nom de fitxer MP3 (ex: 60 -> C4.mp3)
-         * Usant la nomenclatura amb 's' per als sostinguts.
+         * Converteix un número MIDI a nom de fitxer MP3 (ex: 60 -> C4.mp3).
+         * CORRECCIÓ 2: Utilitza la nomenclatura amb 's' per als fitxers de GitHub (ex: Cs4, As3).
          * @param {number} midiNumber - El número MIDI.
          * @returns {string} El nom del fitxer (incloent la ruta).
          */
         function getFileName(midiNumber) {
-            // MANTENIM la nomenclatura 's' per als sostinguts (As, Cs, etc.)
+            // Correspondència de MIDI a nota i octava
             const notes = ['C', 'Cs', 'D', 'Ds', 'E', 'F', 'Fs', 'G', 'Gs', 'A', 'As', 'B'];
             const octave = Math.floor(midiNumber / 12) - 1;
             const noteIndex = midiNumber % 12;
-            const noteName = notes[noteIndex];
+            let noteName = notes[noteIndex];
+
+            // Casos especials on la nomenclatura no utilitza 's' (C, D, E, F, G, A, B)
+            if (noteName.length > 1 && !noteName.endsWith('s')) {
+                 // Aquest codi és segur, però donat que el teu array notes[] ja utilitza la 's' per als sostinguts,
+                 // l'única cosa que necessitem és afegir l'octava.
+            }
+
+            // A3 (MIDI 57) i A4 (MIDI 69) no tenen 's'
+            if (midiNumber === 57 || midiNumber === 69) noteName = 'A';
+            // B3 (MIDI 59) i B4 (MIDI 71) no tenen 's'
+            if (midiNumber === 59 || midiNumber === 71) noteName = 'B';
+            // C4 (MIDI 60) i C5 (MIDI 72) no tenen 's'
+            if (midiNumber === 60 || midiNumber === 72) noteName = 'C';
+            // D4 (MIDI 62) no tenen 's'
+            if (midiNumber === 62) noteName = 'D';
+            // E4 (MIDI 64) no tenen 's'
+            if (midiNumber === 64) noteName = 'E';
+            // F4 (MIDI 65) no tenen 's'
+            if (midiNumber === 65) noteName = 'F';
+            // G4 (MIDI 67) no tenen 's'
+            if (midiNumber === 67) noteName = 'G';
+
+
+            // Corregim l'array de notes per reflectir la teva nomenclatura (sense el símbol '#' però amb 's')
+            const notesMap = [
+                'C', 'Cs', 'D', 'Ds', 'E', 'F', 'Fs', 'G', 'Gs', 'A', 'As', 'B'
+            ];
+            const finalNoteName = notesMap[noteIndex];
             
             // Retorna nom de fitxer per a la càrrega
-            return `${AUDIO_PATH}${noteName}${octave}.mp3`;
+            return `${AUDIO_PATH}${finalNoteName}${octave}.mp3`;
         }
         
         /**
@@ -322,14 +355,14 @@
 
                     audio.oncanplaythrough = () => onLoaded(midi, false);
                     
-                    // Si falla la càrrega d'un arxiu
-                    audio.onerror = () => {
-                        console.error(`Error de càrrega per a la nota MIDI ${midi} (${fileName}).`);
+                    // Si falla la càrrega d'un arxiu (generalment 404 Not Found)
+                    audio.onerror = (e) => {
+                        console.error(`Error de càrrega per a la nota MIDI ${midi} (${fileName}).`, e);
                         failedFiles.push(fileName);
                         onLoaded(midi, true); // Continuem amb la càrrega dels altres
                     };
 
-                    // Forcem la càrrega. Si l'arxiu existeix, això hauria de ser ràpid.
+                    // Forcem la càrrega
                     audio.load();
                 }
             });
@@ -350,12 +383,14 @@
                 })
                 .catch((error) => {
                     // Si hi ha errors, mostrem l'alerta, però permetem que el joc continuï 
-                    // (ja que la majoria d'arxius podrien haver carregat correctament)
                     gameState.isAudioReady = false;
                     
                     let message = `No s'han pogut carregar ${error.errorCount}/${TOTAL_MIDI_NOTES} arxius d'àudio.`;
+                    
+                    // Aquesta part és crucial per a la depuració
+                    console.error("Fitxers fallits:", error.failedFiles);
                     if (error.failedFiles.length > 0) {
-                        message += ` Fitxers amb error: ${error.failedFiles.join(', ')}`;
+                        message += ` El primer arxiu fallit: ${error.failedFiles[0]}`;
                     }
                     showAudioErrorPopup(message);
                     
@@ -395,7 +430,7 @@
             if (!audioBase || !audioInterval) {
                  elements.feedbackMessage.textContent = 'Error intern: Nota MIDI no trobada al cache.';
                  elements.feedbackMessage.classList.add('text-red-400');
-                 showAudioErrorPopup("La nota requerida no es va carregar correctament.");
+                 showAudioErrorPopup("La nota requerida no es va carregar correctament. Revisa la consola per veure l'arxiu fallit.");
                  return;
             }
 
@@ -403,12 +438,16 @@
             const resetAndPlay = (audio) => {
                  audio.pause();
                  audio.currentTime = 0; // Molt important per a reproducció ràpida
-                 audio.play().catch(e => console.error("Error de reproducció ràpida:", e));
+                 // El 'play' ha d'estar dins un bloc try/catch per capturar possibles errors del navegador
+                 audio.play().catch(e => {
+                    console.error("Error de reproducció:", e);
+                    elements.feedbackMessage.textContent = 'Error: El navegador va bloquejar la reproducció automàtica. Fes clic a "Play" de nou.';
+                    elements.feedbackMessage.classList.add('text-yellow-400');
+                 });
             };
 
             const direction = gameState.currentDirection;
             
-            // La reproducció és immediata perquè l'àudio ja està a la memòria
             try {
                 if (direction === 'Ascendent') {
                     resetAndPlay(audioBase); // Nota baixa
@@ -543,10 +582,8 @@
         function generateOptions(availableOptions) {
             elements.intervalOptions.innerHTML = ''; // Neteja els botons anteriors
 
-            // ******* CANVI CLAU: ORDENAR ELS BOTONS PER SEMITONS ASCENDENTS *******
             // Ordenem les opcions per semitons (de petit a gran)
             availableOptions.sort((a, b) => a - b);
-            // *******************************************************************
             
             availableOptions.forEach(semitones => {
                 const name = INTERVAL_NAMES[semitones];
@@ -560,7 +597,6 @@
             });
             
             // Ajustar el layout grid per acomodar el nombre de botons
-            // Exemple: si hi ha 5 botons, fem 5 columnes petites o 3-2.
             const numOptions = availableOptions.length;
             let gridLayout = 'repeat(auto-fit, minmax(100px, 1fr))';
             if (numOptions <= 6) {
