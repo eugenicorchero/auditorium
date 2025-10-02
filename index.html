@@ -132,7 +132,8 @@
                     </svg>
                 </button>
                 <p id="directionLabel" class="text-lg font-semibold text-gray-300 mb-4"></p>
-                <p id="debugNotes" class="text-xs text-gray-500 mb-2 invisible"></p><!-- Per a debug -->
+                <!-- Aquest element estava visible per a debug. Ara és permanentment ocult. -->
+                <p id="debugNotes" class="hidden text-xs text-gray-500 mb-2"></p> 
 
                 <!-- Barra de progrés del temporitzador (30 segons), utilitzant Blau -->
                 <div class="w-full bg-gray-700 rounded-full h-2.5">
@@ -506,11 +507,10 @@
                 baseMIDI = intervalMIDI - intervalSemitones; // Nota base (baixa)
             }
 
-            // Aquesta part assegura que la visualització de notes sigui correcta,
-            // però la lògica d'àudio es basa en baseMIDI (nota baixa) i intervalMIDI (nota alta).
-            elements.debugNotes.textContent = `Notes: ${getFileName(baseMIDI).match(/(\w+\d+)\.mp3/)[1]} i ${getFileName(intervalMIDI).match(/(\w+\d+)\.mp3/)[1]}`;
-            elements.debugNotes.classList.remove('invisible');
-
+            // LÍNIA DE DEBUG ELIMINADA DE LA UI:
+            // elements.debugNotes.textContent = `Notes: ${getFileName(baseMIDI).match(/(\w+\d+)\.mp3/)[1]} i ${getFileName(intervalMIDI).match(/(\w+\d+)\.mp3/)[1]}`;
+            // elements.debugNotes.classList.remove('invisible');
+            
             console.log(`Interval Generat: ${INTERVAL_NAMES[intervalSemitones]} (${intervalSemitones} semitons), Direcció: ${direction}, MIDI Baixa: ${baseMIDI}, MIDI Alta: ${intervalMIDI}`);
 
             return {
@@ -694,7 +694,6 @@
             showScreen('difficulty');
             gameState.score = 0;
             gameState.round = 0;
-            elements.debugNotes.classList.add('invisible');
         }
 
 
