@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auditorium: Entrenador d'Intervals Musicals</title>
+    <title>Auditorum: Entrenador d'Intervals Musicals</title>
     <!-- Càrrega de Tailwind CSS per a un disseny responsive i ràpid -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -91,7 +91,7 @@
         <!-- PANTALLA 1: SELECCIÓ DE DIFICULTAT -->
         <div id="difficultyScreen" class="opacity-0 transition-opacity duration-500">
             <header class="text-center mb-8 border-b border-blue-600 pb-4">
-                <h1 class="text-4xl font-extrabold text-white tracking-tight">Auditorium</h1>
+                <h1 class="text-4xl font-extrabold text-white tracking-tight">Auditorum</h1>
                 <p class="text-xl text-blue-400 font-semibold mt-1">Entrenador d'Intervals Musicals</p>
             </header>
 
@@ -142,6 +142,7 @@
             </div>
 
             <!-- Botons d'Opció d'Interval (Es generaran per JS) -->
+            <!-- Aquí s'aplicarà la nova lògica: només intervals rellevants -->
             <div id="intervalOptions" class="grid gap-3 mt-8" style="grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));">
                 <!-- Botons injectats aquí -->
             </div>
@@ -201,25 +202,21 @@
         // Tots els 13 intervals (0 a 12 semitons)
         const ALL_INTERVALS = Object.keys(INTERVAL_NAMES).map(Number);
 
-        // CONFIGURACIÓ ACTUALITZADA DELS NIVELLS DE DIFICULTAT
+        // CONFIGURACIÓ DELS NIVELLS DE DIFICULTAT
         const DIFFICULTY_CONFIG = {
             easy: {
                 // Intervals: Uníson, 2a M, 3a M, 4a J, 5a J (0, 2, 4, 5, 7)
                 intervals: [0, 2, 4, 5, 7], 
-                allOptions: ALL_INTERVALS,
                 directions: ['Ascendent']
             },
             medium: {
                 // Intervals: Uníson, 2a M, 3a M, 4a J, 5a J, 6a M, 7a M, Octava (0, 2, 4, 5, 7, 9, 11, 12)
                 intervals: [0, 2, 4, 5, 7, 9, 11, 12], 
-                allOptions: ALL_INTERVALS,
-                directions: ['Ascendent', 'Descendent', 'Harmònic'] // Totes les direccions
+                directions: ['Ascendent', 'Descendent', 'Harmònic']
             },
             hard: {
                 // Tots els 13 intervals cromàtics (0 a 12)
-                intervals: ALL_INTERVALS, // [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-                allOptions: ALL_INTERVALS,
-                // Ascendent o descendent
+                intervals: ALL_INTERVALS, 
                 directions: ['Ascendent', 'Descendent'] 
             }
         };
@@ -528,8 +525,9 @@
             
             elements.directionLabel.textContent = `Direcció: ${gameState.currentDirection}`;
             
-            // 2. Genera els botons d'opció (mostrant sempre els 13 intervals com a opcions)
-            generateOptions(DIFFICULTY_CONFIG[gameState.difficulty].allOptions);
+            // 2. Genera els botons d'opció UTILITZANT NOMÉS ELS INTERVALS D'AQUEST NIVELL
+            const optionsToUse = DIFFICULTY_CONFIG[gameState.difficulty].intervals;
+            generateOptions(optionsToUse);
 
             // 3. Inicialitza el temporitzador
             startTimer();
@@ -545,9 +543,11 @@
         function generateOptions(availableOptions) {
             elements.intervalOptions.innerHTML = ''; // Neteja els botons anteriors
 
-            // Barreja les opcions per evitar l'aprenentatge basat en la posició
-            availableOptions.sort(() => Math.random() - 0.5);
-
+            // ******* CANVI CLAU: ORDENAR ELS BOTONS PER SEMITONS ASCENDENTS *******
+            // Ordenem les opcions per semitons (de petit a gran)
+            availableOptions.sort((a, b) => a - b);
+            // *******************************************************************
+            
             availableOptions.forEach(semitones => {
                 const name = INTERVAL_NAMES[semitones];
                 const button = document.createElement('button');
@@ -558,6 +558,22 @@
                 button.classList.add('py-3', 'px-4', 'bg-gray-700', 'text-gray-100', 'font-semibold', 'rounded-lg', 'shadow-sm', 'hover:bg-blue-600', 'hover:text-white', 'transition', 'duration-150', 'text-sm', 'md:text-base');
                 elements.intervalOptions.appendChild(button);
             });
+            
+            // Ajustar el layout grid per acomodar el nombre de botons
+            // Exemple: si hi ha 5 botons, fem 5 columnes petites o 3-2.
+            const numOptions = availableOptions.length;
+            let gridLayout = 'repeat(auto-fit, minmax(100px, 1fr))';
+            if (numOptions <= 6) {
+                // Per a pocs botons, fem columnes iguals i grans
+                gridLayout = `repeat(${numOptions}, minmax(120px, 1fr))`;
+            } else if (numOptions === 8) {
+                // 8 botons per a Mitjà: 4 columnes
+                gridLayout = 'repeat(4, minmax(120px, 1fr))';
+            } else if (numOptions === 13) {
+                 // 13 botons per a Difícil: 4/5 columnes 
+                gridLayout = 'repeat(auto-fit, minmax(100px, 1fr))';
+            }
+            elements.intervalOptions.style.gridTemplateColumns = gridLayout;
         }
 
         /**
