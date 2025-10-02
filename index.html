@@ -17,11 +17,10 @@
         /* Estil per al botó de reproducció, per fer-lo destacar */
         #playButton {
             transition: all 0.1s ease;
-            /* Utilitzem un ombrejat Blau, com el color dels botons d'Auditorum */
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
         }
         /* Utilitzem un ombrejat Blau en l'estat hover */
-        #playButton:hover {
+        #playButton:hover:not(:disabled) {
             transform: scale(1.05);
             box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4), 0 4px 6px -4px rgba(37, 99, 235, 0.3); /* blue-600 shadow */
         }
@@ -73,7 +72,7 @@
     <div id="audioErrorPopup" class="audio-error-popup hidden bg-red-600 text-white p-3 rounded-lg shadow-xl max-w-xs transition duration-300 transform scale-100">
         <p class="font-bold mb-1">⚠️ Error de Precàrrega</p>
         <p id="audioErrorMessage" class="text-sm">No s'han pogut carregar tots els fitxers d'àudio.</p>
-        <p class="text-xs mt-1 opacity-80">Assegura't que el path i la nomenclatura dels arxius sigui correcta (ex: C4.mp3, D#4.mp3).</p>
+        <p class="text-xs mt-1 opacity-80">Assegura't que el path i la nomenclatura dels arxius sigui correcta (ex: C4.mp3, Cs4.mp3).</p>
     </div>
 
     <!-- Contenidor principal de l'aplicació: Fosc i amb ombra subtil -->
@@ -83,9 +82,9 @@
         <div id="loadingOverlay" class="loading-overlay">
             <p class="text-center font-semibold">Carregant fitxers d'àudio per a un joc instantani...</p>
             <div class="w-full bg-gray-600 rounded-full h-2.5 max-w-sm">
-                <div id="preloaderBar" class="bg-blue-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                <div class="h-2.5 bg-blue-500 rounded-full transition-all duration-300" id="preloaderBar" style="width: 0%"></div>
             </div>
-            <p id="preloaderStatus" class="text-base text-gray-300"></p>
+            <p class="text-base text-gray-300" id="preloaderStatus"></p>
         </div>
 
         <!-- PANTALLA 1: SELECCIÓ DE DIFICULTAT -->
@@ -96,21 +95,21 @@
             </header>
 
             <h2 class="text-2xl font-bold text-gray-100 mb-2 text-center">Benvingut/da! Tria el teu Nivell de Pràctica</h2>
-            <p class="text-gray-400 text-center mb-8 max-w-xl mx-auto">Practica la identificació d'intervals musicals de forma visual. Selecciona un nivell de dificultat per començar. Recorda que tens 30 segons per a cada resposta.</p>
+            <p class="text-gray-400 text-center mb-8 max-w-xl mx-auto">Practica la identificació d'intervals musicals. L'interval és l'únic que canvia, la nota base és aleatòria. Tria el teu nivell.</p>
 
             <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-                <!-- Botons amb el color Blau Fosc i descripcions actualitzades segons la teva petició -->
+                <!-- Botons amb el color Blau Fosc -->
                 <button onclick="startGame('easy')" class="difficulty-button text-white font-semibold rounded-lg hover:brightness-110 p-6 flex flex-col items-center text-center">
                     <span class="text-xl font-bold mb-2">Fàcil</span>
-                    <span class="text-sm opacity-90">Intervals: Uníson, 2a M, 3a M, 4a J, 5a J </span>
+                    <span class="text-sm opacity-90">Intervals: Uníson, 2a M, 3a M, 4a J, 5a J (Ascendent)</span>
                 </button>
                 <button onclick="startGame('medium')" class="difficulty-button text-white font-semibold rounded-lg hover:brightness-110 p-6 flex flex-col items-center text-center">
                     <span class="text-xl font-bold mb-2">Mitjà</span>
-                    <span class="text-sm opacity-90">Intervals: Uníson, 2a M, 3a M, 4a J, 5a J, 6a M, 7a M, Octava </span>
+                    <span class="text-sm opacity-90">Intervals Majors i Justos (fins a 7a M) (Totes les direccions)</span>
                 </button>
                 <button onclick="startGame('hard')" class="difficulty-button text-white font-semibold rounded-lg hover:brightness-110 p-6 flex flex-col items-center text-center">
                     <span class="text-xl font-bold mb-2">Difícil</span>
-                    <span class="text-sm opacity-90">Tots els intervals (Ascendent i Descendent)</span>
+                    <span class="text-sm opacity-90">Tots els intervals Cromàtics (Ascendent i Descendent)</span>
                 </button>
             </div>
         </div>
@@ -125,20 +124,21 @@
 
             <!-- Àrea de Reproducció i Temporitzador Visual -->
             <div class="text-center mb-8">
-                <!-- Botó de reproducció Blau -->
-                <button id="playButton" class="bg-blue-600 text-white p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 hover:bg-blue-700 transition duration-200 focus:outline-none">
+                <!-- Botó de reproducció Blau (Sempre actiu per a la repetició) -->
+                <button id="playButton" class="bg-blue-600 text-white p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 hover:bg-blue-700 transition duration-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed">
                     <!-- Icona de reproducció (SVG) -->
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
                     </svg>
                 </button>
                 <p id="directionLabel" class="text-lg font-semibold text-gray-300 mb-4"></p>
+                <p id="debugNotes" class="text-xs text-gray-500 mb-2 invisible"></p><!-- Per a debug -->
 
                 <!-- Barra de progrés del temporitzador (30 segons), utilitzant Blau -->
                 <div class="w-full bg-gray-700 rounded-full h-2.5">
                     <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full" style="width: 100%"></div>
                 </div>
-                <p class="text-sm text-gray-400 mt-2">Temps restant per escoltar: <span id="timeRemaining">30</span>s</p>
+                <p class="text-sm text-gray-400 mt-2">Temps restant per respondre: <span id="timeRemaining">30</span>s</p>
             </div>
 
             <!-- Botons d'Opció d'Interval (Es generaran per JS) -->
@@ -181,16 +181,18 @@
         // VARIABLES GLOBALS I CONFIGURACIÓ
         // ===============================================
 
-        // *****************************************************************
-        // CORRECCIÓ 1: ÚS DE LA RUTA RAW DE GITHUB AMB LA TEVA ESTRUCTURA
-        // Utilitzem la ruta raw per garantir que els fitxers siguin accessibles.
-        // Assumim que la teva carpeta es diu 'audio' dins de 'auditorium'
-        // *****************************************************************
-        const AUDIO_PATH = 'https://raw.githubusercontent.com/eugenicorchero/auditorum/main/audio/'; 
+        // RUTA DE L'ÀUDIO: Utilitzem una ruta relativa (./audio/)
+        // Això funciona en qualsevol servidor web si la carpeta 'audio' és al mateix nivell que l'index.html.
+        const AUDIO_PATH = './audio/'; 
         
+        // RANG DE NOTES DEL TEU ARXIU MIDI (A3 a C5, inclosos)
         const MIDI_START = 57; // A3 (Nota més baixa)
         const MIDI_END = 72;   // C5 (Nota més alta)
-        const TOTAL_MIDI_NOTES = MIDI_END - MIDI_START + 1; // 16 notes
+        const TOTAL_MIDI_NOTES = MIDI_END - MIDI_START + 1; 
+
+        // TEMPS D'ESPERA ENTRE NOTES PER A LA REPRODUCCIÓ SEQÜENCIAL
+        const NOTE_DELAY_MS = 700; 
+
         const TIMER_DURATION = 30; // Temps en segons
 
         // CACHE: Emmagatzemarà tots els objectes Audio ja carregats
@@ -199,28 +201,24 @@
         // Mapa de semitons a noms d'intervals 
         const INTERVAL_NAMES = {
             0: 'Uníson', 1: '2a menor', 2: '2a Major', 3: '3a menor',
-            4: '3a Major', 5: '4a Justa', 6: 'Tríton', // 4a Aug/5a Dim
+            4: '3a Major', 5: '4a Justa', 6: 'Tríton', 
             7: '5a Justa', 8: '6a menor', 9: '6a Major',
             10: '7a menor', 11: '7a Major', 12: '8a Justa'
         };
 
-        // Tots els 13 intervals (0 a 12 semitons)
         const ALL_INTERVALS = Object.keys(INTERVAL_NAMES).map(Number);
 
         // CONFIGURACIÓ DELS NIVELLS DE DIFICULTAT
         const DIFFICULTY_CONFIG = {
             easy: {
-                // Intervals: Uníson, 2a M, 3a M, 4a J, 5a J (0, 2, 4, 5, 7)
-                intervals: [0, 2, 4, 5, 7], 
+                intervals: [0, 2, 4, 5, 7], // Uníson, 2M, 3M, 4J, 5J
                 directions: ['Ascendent']
             },
             medium: {
-                // Intervals: Uníson, 2a M, 3a M, 4a J, 5a J, 6a M, 7a M, Octava (0, 2, 4, 5, 7, 9, 11, 12)
-                intervals: [0, 2, 4, 5, 7, 9, 11, 12], 
+                intervals: [0, 2, 4, 5, 7, 9, 11, 12], // Majors i Justos fins a 7M (2M, 3M, 4J, 5J, 6M, 7M, 8J)
                 directions: ['Ascendent', 'Descendent', 'Harmònic']
             },
             hard: {
-                // Tots els 13 intervals cromàtics (0 a 12)
                 intervals: ALL_INTERVALS, 
                 directions: ['Ascendent', 'Descendent'] 
             }
@@ -264,60 +262,34 @@
             loadingOverlay: document.getElementById('loadingOverlay'),
             preloaderBar: document.getElementById('preloaderBar'),
             preloaderStatus: document.getElementById('preloaderStatus'),
+            debugNotes: document.getElementById('debugNotes'),
         };
 
 
         // ===============================================
-        // UTILS D'ÀUDIO I MIDI (CORRECCIÓ DE NOMENCLATURA)
+        // UTILS D'ÀUDIO I MIDI
         // ===============================================
         
         /**
          * Converteix un número MIDI a nom de fitxer MP3 (ex: 60 -> C4.mp3).
-         * CORRECCIÓ 2: Utilitza la nomenclatura amb 's' per als fitxers de GitHub (ex: Cs4, As3).
+         * Utilitza la nomenclatura amb 's' per als sostinguts.
          * @param {number} midiNumber - El número MIDI.
          * @returns {string} El nom del fitxer (incloent la ruta).
          */
         function getFileName(midiNumber) {
-            // Correspondència de MIDI a nota i octava
-            const notes = ['C', 'Cs', 'D', 'Ds', 'E', 'F', 'Fs', 'G', 'Gs', 'A', 'As', 'B'];
-            const octave = Math.floor(midiNumber / 12) - 1;
-            const noteIndex = midiNumber % 12;
-            let noteName = notes[noteIndex];
-
-            // Casos especials on la nomenclatura no utilitza 's' (C, D, E, F, G, A, B)
-            if (noteName.length > 1 && !noteName.endsWith('s')) {
-                 // Aquest codi és segur, però donat que el teu array notes[] ja utilitza la 's' per als sostinguts,
-                 // l'única cosa que necessitem és afegir l'octava.
-            }
-
-            // A3 (MIDI 57) i A4 (MIDI 69) no tenen 's'
-            if (midiNumber === 57 || midiNumber === 69) noteName = 'A';
-            // B3 (MIDI 59) i B4 (MIDI 71) no tenen 's'
-            if (midiNumber === 59 || midiNumber === 71) noteName = 'B';
-            // C4 (MIDI 60) i C5 (MIDI 72) no tenen 's'
-            if (midiNumber === 60 || midiNumber === 72) noteName = 'C';
-            // D4 (MIDI 62) no tenen 's'
-            if (midiNumber === 62) noteName = 'D';
-            // E4 (MIDI 64) no tenen 's'
-            if (midiNumber === 64) noteName = 'E';
-            // F4 (MIDI 65) no tenen 's'
-            if (midiNumber === 65) noteName = 'F';
-            // G4 (MIDI 67) no tenen 's'
-            if (midiNumber === 67) noteName = 'G';
-
-
-            // Corregim l'array de notes per reflectir la teva nomenclatura (sense el símbol '#' però amb 's')
             const notesMap = [
                 'C', 'Cs', 'D', 'Ds', 'E', 'F', 'Fs', 'G', 'Gs', 'A', 'As', 'B'
             ];
+            const octave = Math.floor(midiNumber / 12) - 1;
+            const noteIndex = midiNumber % 12;
             const finalNoteName = notesMap[noteIndex];
             
-            // Retorna nom de fitxer per a la càrrega
+            // Retorna la URL completa al fitxer d'àudio (ex: .../audio/A3.mp3)
             return `${AUDIO_PATH}${finalNoteName}${octave}.mp3`;
         }
         
         /**
-         * Precàrrega (Pre-load) de tots els fitxers d'àudio del rang MIDI (57-72).
+         * Precàrrega (Pre-load) de tots els fitxers d'àudio.
          */
         function preloadAllAudio() {
             return new Promise((resolve, reject) => {
@@ -329,16 +301,16 @@
                     notesLoaded++;
                     if (isError) errors++;
                     
-                    // Actualitzar barra de progrés
                     const percentage = Math.round((notesLoaded / TOTAL_MIDI_NOTES) * 100);
                     elements.preloaderBar.style.width = `${percentage}%`;
                     elements.preloaderStatus.textContent = `Carregades ${notesLoaded}/${TOTAL_MIDI_NOTES} notes. ${errors > 0 ? '(' + errors + ' errors)' : ''}`;
 
                     if (notesLoaded === TOTAL_MIDI_NOTES) {
                         if (errors === 0) {
+                            console.log("Precàrrega OK: Tots els fitxers s'han trobat.");
                             resolve();
                         } else {
-                            // En cas d'error, resolem amb les dades dels errors
+                            console.error(`Precàrrega ERROR: ${errors} fitxers fallits.`, failedFiles);
                             reject({
                                 errorCount: errors,
                                 failedFiles: failedFiles
@@ -351,139 +323,119 @@
                     const fileName = getFileName(midi);
                     const audio = new Audio(fileName);
                     
-                    audioCache[midi] = audio; // Guardem l'objecte Audio al cache
+                    audioCache[midi] = audio; 
 
                     audio.oncanplaythrough = () => onLoaded(midi, false);
-                    
-                    // Si falla la càrrega d'un arxiu (generalment 404 Not Found)
                     audio.onerror = (e) => {
                         console.error(`Error de càrrega per a la nota MIDI ${midi} (${fileName}).`, e);
                         failedFiles.push(fileName);
-                        onLoaded(midi, true); // Continuem amb la càrrega dels altres
+                        onLoaded(midi, true); 
                     };
-
-                    // Forcem la càrrega
                     audio.load();
                 }
             });
         }
         
         /**
-         * Comprova i inicia la precàrrega. S'executa a l'inici.
+         * Comprova i inicia la precàrrega.
          */
         function checkAudioAccessibility() {
             preloadAllAudio()
                 .then(() => {
                     gameState.isAudioReady = true;
                     hideAudioErrorPopup();
-                    // Amaga l'overlay de càrrega i mostra la pantalla de dificultat
                     elements.loadingOverlay.classList.add('hidden');
                     screens.difficulty.classList.remove('opacity-0');
-                    console.log("Precàrrega completa. Àudio preparat per a reproducció instantània.");
+                    console.log("Precàrrega completa. Àudio preparat.");
                 })
                 .catch((error) => {
-                    // Si hi ha errors, mostrem l'alerta, però permetem que el joc continuï 
                     gameState.isAudioReady = false;
-                    
                     let message = `No s'han pogut carregar ${error.errorCount}/${TOTAL_MIDI_NOTES} arxius d'àudio.`;
-                    
-                    // Aquesta part és crucial per a la depuració
-                    console.error("Fitxers fallits:", error.failedFiles);
                     if (error.failedFiles.length > 0) {
-                        message += ` El primer arxiu fallit: ${error.failedFiles[0]}`;
+                        message += ` Primer arxiu fallit: ${error.failedFiles[0]}`;
                     }
                     showAudioErrorPopup(message);
-                    
-                    // Permet entrar al joc encara que hi hagi errors, però amb l'alerta.
                     elements.loadingOverlay.classList.add('hidden');
                     screens.difficulty.classList.remove('opacity-0');
                 });
         }
 
-        /**
-         * Mostra el pop-up d'error d'àudio.
-         * @param {string} message - Missatge addicional d'error.
-         */
         function showAudioErrorPopup(message) {
             const popup = elements.audioErrorPopup;
             elements.audioErrorMessage.textContent = message;
             popup.classList.remove('hidden');
-            
-            setTimeout(hideAudioErrorPopup, 10000); // Mostra l'error durant 10s
+            setTimeout(hideAudioErrorPopup, 10000); 
         }
 
-        /**
-         * Amaga el pop-up d'error d'àudio.
-         */
         function hideAudioErrorPopup() {
             elements.audioErrorPopup.classList.add('hidden');
         }
 
         /**
-         * Reprodueix l'interval generat INSTANTÀNIAMENT utilitzant el CACHE.
+         * Reprodueix l'interval generat (secuencialment o harmònicament).
          */
         function playInterval() {
-            // Obtenim els objectes Audio directament del cache utilitzant les claus MIDI
             const audioBase = audioCache[gameState.baseNoteMIDI];
             const audioInterval = audioCache[gameState.intervalNoteMIDI];
 
             if (!audioBase || !audioInterval) {
-                 elements.feedbackMessage.textContent = 'Error intern: Nota MIDI no trobada al cache.';
-                 elements.feedbackMessage.classList.add('text-red-400');
-                 showAudioErrorPopup("La nota requerida no es va carregar correctament. Revisa la consola per veure l'arxiu fallit.");
+                 console.error('Notes MIDI no trobades al cache. No es pot reproduir.');
                  return;
             }
 
-            // Aturar i resetar per a la reproducció instantània
             const resetAndPlay = (audio) => {
                  audio.pause();
-                 audio.currentTime = 0; // Molt important per a reproducció ràpida
-                 // El 'play' ha d'estar dins un bloc try/catch per capturar possibles errors del navegador
+                 audio.currentTime = 0; 
+                 // Intentar reproduir, capturant possibles errors de política d'àudio
                  audio.play().catch(e => {
-                    console.error("Error de reproducció:", e);
-                    elements.feedbackMessage.textContent = 'Error: El navegador va bloquejar la reproducció automàtica. Fes clic a "Play" de nou.';
-                    elements.feedbackMessage.classList.add('text-yellow-400');
+                    if (e.name === "NotAllowedError") {
+                        elements.feedbackMessage.textContent = '🔊 Permet la reproducció automàtica o fes clic a Play.';
+                        elements.feedbackMessage.classList.add('text-yellow-400');
+                    }
                  });
             };
 
             const direction = gameState.currentDirection;
             
             try {
-                if (direction === 'Ascendent') {
-                    resetAndPlay(audioBase); // Nota baixa
-                    setTimeout(() => resetAndPlay(audioInterval), 600); // Nota alta
-                } else if (direction === 'Descendent') {
-                    resetAndPlay(audioInterval); // Nota alta (sona primer)
-                    setTimeout(() => resetAndPlay(audioBase), 600); // Nota baixa (sona segon)
-                } else if (direction === 'Harmònic' || gameState.correctIntervalSemitones === 0) {
+                // Cas 1: Reproducció Harmònica (simultània) o Uníson (0 semitons)
+                if (direction === 'Harmònic' || gameState.correctIntervalSemitones === 0) {
                     resetAndPlay(audioBase);
-                    resetAndPlay(audioInterval); // Sonen simultàniament
+                    // Si és un interval harmònic diferent d'uníson
+                    if (gameState.correctIntervalSemitones !== 0) {
+                        resetAndPlay(audioInterval); 
+                    }
+                    console.log(`Reproduint: ${gameState.currentInterval.label} Harmònic. Base: ${gameState.baseNoteMIDI}, Interval: ${gameState.intervalNoteMIDI}`);
+                } 
+                // Cas 2: Reproducció Seqüencial (Ascendent)
+                else if (direction === 'Ascendent') {
+                    resetAndPlay(audioBase); // 1a nota (la baixa)
+                    setTimeout(() => resetAndPlay(audioInterval), NOTE_DELAY_MS); // 2a nota (la alta)
+                    console.log(`Reproduint: ${gameState.currentInterval.label} Ascendent. Baixa: ${gameState.baseNoteMIDI}, Alta: ${gameState.intervalNoteMIDI}`);
+                } 
+                // Cas 3: Reproducció Seqüencial (Descendent)
+                else if (direction === 'Descendent') {
+                    resetAndPlay(audioInterval); // 1a nota (la alta)
+                    setTimeout(() => resetAndPlay(audioBase), NOTE_DELAY_MS); // 2a nota (la baixa)
+                    console.log(`Reproduint: ${gameState.currentInterval.label} Descendent. Alta: ${gameState.intervalNoteMIDI}, Baixa: ${gameState.baseNoteMIDI}`);
                 }
             } catch(e) {
-                 console.error("Error intentant reproduir l'àudio des del cache:", e);
-                 elements.feedbackMessage.textContent = 'Error de reproducció inesperat. Prova de reiniciar.';
+                 console.error("Error crític de reproducció:", e);
+                 elements.feedbackMessage.textContent = 'Error de reproducció inesperat.';
                  elements.feedbackMessage.classList.add('text-red-400');
             }
         }
 
 
         // ===============================================
-        // LÒGICA DEL JOC
+        // LÒGICA DEL JOC REFORÇADA
         // ===============================================
 
-        /**
-         * Canvia la pantalla visible.
-         * @param {string} screenId - ID de la pantalla a mostrar ('difficulty', 'quiz', 'result').
-         */
         function showScreen(screenId) {
             Object.values(screens).forEach(screen => screen.classList.add('hidden'));
             screens[screenId].classList.remove('hidden');
         }
 
-        /**
-         * Inicialitza el joc i la primera ronda.
-         * @param {string} difficulty - Nivell seleccionat ('easy', 'medium', 'hard').
-         */
         function startGame(difficulty) {
             gameState.difficulty = difficulty;
             gameState.score = 0;
@@ -495,7 +447,7 @@
         }
 
         /**
-         * Genera un interval aleatori basat en el nivell de dificultat.
+         * Genera un interval aleatori amb la nota base garantida per estar dins del rang MIDI.
          */
         function generateInterval() {
             const config = DIFFICULTY_CONFIG[gameState.difficulty];
@@ -512,24 +464,55 @@
                 direction = config.directions[Math.floor(Math.random() * config.directions.length)];
             }
             
-            // 3. Selecciona les notes MIDI
-            let baseMIDI, intervalMIDI; // baseMIDI (baixa), intervalMIDI (alta)
+            let baseMIDI, intervalMIDI; 
             
-            // Determina les notes per tal que l'interval s'ajusti al rang
+            // 3. Càlcul del RANG VÀLID per a la nota de referència inicial (startNoteMIDI)
+            let minStartMIDI = MIDI_START;
+            let maxStartMIDI = MIDI_END;
+
             if (direction === 'Ascendent' || direction === 'Harmònic') {
-                // Per a Ascendent/Harmònic: La nota base ha d'estar prou baixa
-                const maxBaseMIDI = MIDI_END - intervalSemitones;
-                // Assegura un rang mínim de notes bases (p. ex., de MIDI_START a maxBaseMIDI)
-                baseMIDI = MIDI_START + Math.floor(Math.random() * (maxBaseMIDI - MIDI_START + 1));
-                intervalMIDI = baseMIDI + intervalSemitones;
+                // La nota de referència (baseMIDI) ha de ser prou baixa perquè la nota alta 
+                // (baseMIDI + semitons) no excedeixi MIDI_END.
+                maxStartMIDI = MIDI_END - intervalSemitones;
             } else if (direction === 'Descendent') {
-                // Per a Descendent: La nota d'interval ha d'estar prou alta
-                const minIntervalMIDI = MIDI_START + intervalSemitones;
-                // Assegura un rang mínim de notes (p. ex., de minIntervalMIDI a MIDI_END)
-                intervalMIDI = minIntervalMIDI + Math.floor(Math.random() * (MIDI_END - minIntervalMIDI + 1));
-                baseMIDI = intervalMIDI - intervalSemitones; 
+                // La nota de referència (que sonarà primera: intervalMIDI) ha de ser prou alta
+                // perquè la nota baixa (intervalMIDI - semitons) no sigui inferior a MIDI_START.
+                minStartMIDI = MIDI_START + intervalSemitones;
+                // maxStartMIDI = MIDI_END ja és correcte.
             }
-            
+
+            // Comprovació de seguretat: si no es pot generar cap interval vàlid
+            if (minStartMIDI > maxStartMIDI) {
+                // Això només passaria si MIDI_END - MIDI_START és més petit que l'interval
+                // més gran del nivell de dificultat, cosa que no passa amb la configuració actual.
+                console.error("Error crític: El rang MIDI no permet els intervals d'aquesta dificultat.");
+                return {
+                    correctIntervalSemitones: 0, 
+                    direction: 'Harmònic',
+                    baseNoteMIDI: MIDI_START, 
+                    intervalNoteMIDI: MIDI_START,
+                    label: 'ERROR'
+                }; 
+            }
+
+            // 4. Selecció Aleatòria de la nota d'inici
+            const startNoteMIDI = Math.floor(Math.random() * (maxStartMIDI - minStartMIDI + 1)) + minStartMIDI;
+
+            if (direction === 'Ascendent' || direction === 'Harmònic') {
+                baseMIDI = startNoteMIDI;      // Nota base (baixa)
+                intervalMIDI = baseMIDI + intervalSemitones; // Nota interval (alta)
+            } else if (direction === 'Descendent') {
+                intervalMIDI = startNoteMIDI; // Nota interval (alta)
+                baseMIDI = intervalMIDI - intervalSemitones; // Nota base (baixa)
+            }
+
+            // Aquesta part assegura que la visualització de notes sigui correcta,
+            // però la lògica d'àudio es basa en baseMIDI (nota baixa) i intervalMIDI (nota alta).
+            elements.debugNotes.textContent = `Notes: ${getFileName(baseMIDI).match(/(\w+\d+)\.mp3/)[1]} i ${getFileName(intervalMIDI).match(/(\w+\d+)\.mp3/)[1]}`;
+            elements.debugNotes.classList.remove('invisible');
+
+            console.log(`Interval Generat: ${INTERVAL_NAMES[intervalSemitones]} (${intervalSemitones} semitons), Direcció: ${direction}, MIDI Baixa: ${baseMIDI}, MIDI Alta: ${intervalMIDI}`);
+
             return {
                 correctIntervalSemitones: intervalSemitones,
                 direction: direction,
@@ -559,7 +542,7 @@
             gameState.baseNoteMIDI = gameState.currentInterval.baseNoteMIDI;
             gameState.intervalNoteMIDI = gameState.currentInterval.intervalNoteMIDI;
 
-            elements.playButton.disabled = false;
+            elements.playButton.disabled = !gameState.isAudioReady;
             elements.playButton.classList.remove('opacity-50');
             
             elements.directionLabel.textContent = `Direcció: ${gameState.currentDirection}`;
@@ -572,17 +555,19 @@
             startTimer();
             
             // 4. Reprodueix l'interval automàticament (i ràpidament!)
-            playInterval();
+            if (gameState.isAudioReady) {
+                 playInterval();
+            } else {
+                 elements.feedbackMessage.textContent = 'Àudio no disponible. Prova de depurar la precàrrega.';
+                 elements.feedbackMessage.classList.add('text-red-400');
+            }
         }
 
         /**
          * Genera els botons d'opció de resposta.
-         * @param {Array<number>} availableOptions - Llista de semitons per mostrar com a opcions.
          */
         function generateOptions(availableOptions) {
-            elements.intervalOptions.innerHTML = ''; // Neteja els botons anteriors
-
-            // Ordenem les opcions per semitons (de petit a gran)
+            elements.intervalOptions.innerHTML = ''; 
             availableOptions.sort((a, b) => a - b);
             
             availableOptions.forEach(semitones => {
@@ -591,22 +576,17 @@
                 button.textContent = name;
                 button.setAttribute('data-semitones', semitones);
                 button.onclick = () => checkAnswer(semitones, button);
-                // Classes actualitzades per a fons fosc i estil similar a Auditorum
                 button.classList.add('py-3', 'px-4', 'bg-gray-700', 'text-gray-100', 'font-semibold', 'rounded-lg', 'shadow-sm', 'hover:bg-blue-600', 'hover:text-white', 'transition', 'duration-150', 'text-sm', 'md:text-base');
                 elements.intervalOptions.appendChild(button);
             });
             
-            // Ajustar el layout grid per acomodar el nombre de botons
             const numOptions = availableOptions.length;
             let gridLayout = 'repeat(auto-fit, minmax(100px, 1fr))';
             if (numOptions <= 6) {
-                // Per a pocs botons, fem columnes iguals i grans
                 gridLayout = `repeat(${numOptions}, minmax(120px, 1fr))`;
             } else if (numOptions === 8) {
-                // 8 botons per a Mitjà: 4 columnes
                 gridLayout = 'repeat(4, minmax(120px, 1fr))';
             } else if (numOptions === 13) {
-                 // 13 botons per a Difícil: 4/5 columnes 
                 gridLayout = 'repeat(auto-fit, minmax(100px, 1fr))';
             }
             elements.intervalOptions.style.gridTemplateColumns = gridLayout;
@@ -616,16 +596,13 @@
          * Comprova si la resposta de l'usuari és correcta.
          */
         function checkAnswer(selectedSemitones, selectedButton) {
-            if (gameState.isAnswered) return; // Evita respostes múltiples
+            if (gameState.isAnswered) return; 
 
-            clearInterval(gameState.timer); // Atura el temps
+            clearInterval(gameState.timer); 
             gameState.isAnswered = true;
-            elements.playButton.disabled = true;
-            elements.playButton.classList.add('opacity-50');
 
             const isCorrect = selectedSemitones === gameState.correctIntervalSemitones;
 
-            // Deshabilita tots els botons d'opció
             Array.from(elements.intervalOptions.children).forEach(btn => {
                 btn.disabled = true;
                 btn.classList.remove('hover:bg-blue-600', 'bg-gray-700'); 
@@ -717,6 +694,7 @@
             showScreen('difficulty');
             gameState.score = 0;
             gameState.round = 0;
+            elements.debugNotes.classList.add('invisible');
         }
 
 
@@ -726,6 +704,7 @@
 
         window.onload = function() {
             elements.playButton.onclick = playInterval; 
+
             elements.nextRoundButton.onclick = () => {
                 if (gameState.round >= 10) { // Limitem a 10 rondes per al joc
                     endGame();
