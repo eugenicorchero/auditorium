@@ -72,8 +72,8 @@
     <!-- POP-UP d'ERROR D'AUDIO -->
     <div id="audioErrorPopup" class="audio-error-popup hidden bg-red-600 text-white p-3 rounded-lg shadow-xl max-w-xs transition duration-300 transform scale-100">
         <p class="font-bold mb-1">⚠️ Error de Precàrrega</p>
-        <p class="text-sm">No s'han pogut carregar tots els fitxers d'àudio. El sistema busca arxius amb el format: A3.mp3, As4.mp3, etc.</p>
-        <p class="text-xs mt-1 opacity-80">Assegura't que tots els arxius de A3 a C5 (MIDI 57 a 72) existeixen amb la nomenclatura correcta (amb 's').</p>
+        <p id="audioErrorMessage" class="text-sm">No s'han pogut carregar tots els fitxers d'àudio.</p>
+        <p class="text-xs mt-1 opacity-80">Assegura't que tots els arxius de A3 a C5 (MIDI 57 a 72) existeixen a la carpeta `/audio` amb la nomenclatura correcta (ex: Cs4.mp3).</p>
     </div>
 
     <!-- Contenidor principal de l'aplicació: Fosc i amb ombra subtil -->
@@ -187,6 +187,7 @@
         const AUDIO_PATH = '/audio/'; // Carpeta on es troben els MP3
         const MIDI_START = 57; // A3 (Nota més baixa)
         const MIDI_END = 72;   // C5 (Nota més alta)
+        const TOTAL_MIDI_NOTES = MIDI_END - MIDI_START + 1; // 16 notes
         const TIMER_DURATION = 30; // Temps en segons
 
         // CACHE: Emmagatzemarà tots els objectes Audio ja carregats
@@ -260,6 +261,7 @@
             directionLabel: document.getElementById('directionLabel'),
             finalScore: document.getElementById('finalScore'),
             audioErrorPopup: document.getElementById('audioErrorPopup'),
+            audioErrorMessage: document.getElementById('audioErrorMessage'),
             loadingOverlay: document.getElementById('loadingOverlay'),
             preloaderBar: document.getElementById('preloaderBar'),
             preloaderStatus: document.getElementById('preloaderStatus'),
@@ -292,23 +294,28 @@
          */
         function preloadAllAudio() {
             return new Promise((resolve, reject) => {
-                const totalNotes = MIDI_END - MIDI_START + 1;
                 let notesLoaded = 0;
                 let errors = 0;
+                let failedFiles = [];
 
-                const onLoaded = (midiNumber) => {
+                const onLoaded = (midiNumber, isError) => {
                     notesLoaded++;
+                    if (isError) errors++;
                     
                     // Actualitzar barra de progrés
-                    const percentage = Math.round((notesLoaded / totalNotes) * 100);
+                    const percentage = Math.round((notesLoaded / TOTAL_MIDI_NOTES) * 100);
                     elements.preloaderBar.style.width = `${percentage}%`;
-                    elements.preloaderStatus.textContent = `Carregades ${notesLoaded}/${totalNotes} notes. ${errors > 0 ? '(' + errors + ' errors)' : ''}`;
+                    elements.preloaderStatus.textContent = `Carregades ${notesLoaded}/${TOTAL_MIDI_NOTES} notes. ${errors > 0 ? '(' + errors + ' errors)' : ''}`;
 
-                    if (notesLoaded === totalNotes) {
+                    if (notesLoaded === TOTAL_MIDI_NOTES) {
                         if (errors === 0) {
                             resolve();
                         } else {
-                            reject(new Error(`No s'han pogut carregar ${errors} arxius d'àudio.`));
+                            // En cas d'error, resolem amb les dades dels errors
+                            reject({
+                                errorCount: errors,
+                                failedFiles: failedFiles
+                            });
                         }
                     }
                 };
@@ -319,13 +326,13 @@
                     
                     audioCache[midi] = audio; // Guardem l'objecte Audio al cache
 
-                    audio.oncanplaythrough = () => onLoaded(midi);
+                    audio.oncanplaythrough = () => onLoaded(midi, false);
                     
                     // Si falla la càrrega d'un arxiu
                     audio.onerror = () => {
                         console.error(`Error de càrrega per a la nota MIDI ${midi} (${fileName}).`);
-                        errors++;
-                        onLoaded(midi); // Continuem amb la càrrega dels altres
+                        failedFiles.push(fileName);
+                        onLoaded(midi, true); // Continuem amb la càrrega dels altres
                     };
 
                     // Forcem la càrrega. Si l'arxiu existeix, això hauria de ser ràpid.
@@ -348,8 +355,15 @@
                     console.log("Precàrrega completa. Àudio preparat per a reproducció instantània.");
                 })
                 .catch((error) => {
+                    // Si hi ha errors, mostrem l'alerta, però permetem que el joc continuï 
+                    // (ja que la majoria d'arxius podrien haver carregat correctament)
                     gameState.isAudioReady = false;
-                    showAudioErrorPopup(error.message);
+                    
+                    let message = `No s'han pogut carregar ${error.errorCount}/${TOTAL_MIDI_NOTES} arxius d'àudio.`;
+                    if (error.failedFiles.length > 0) {
+                        message += ` Fitxers amb error: ${error.failedFiles.join(', ')}`;
+                    }
+                    showAudioErrorPopup(message);
                     
                     // Permet entrar al joc encara que hi hagi errors, però amb l'alerta.
                     elements.loadingOverlay.classList.add('hidden');
@@ -361,13 +375,12 @@
          * Mostra el pop-up d'error d'àudio.
          * @param {string} message - Missatge addicional d'error.
          */
-        function showAudioErrorPopup(message = '') {
+        function showAudioErrorPopup(message) {
             const popup = elements.audioErrorPopup;
-            // Missatge més explícit sobre la nomenclatura
-            popup.querySelector('.text-sm').textContent = message || "No s'han pogut carregar tots els fitxers d'àudio. El sistema busca arxius amb el format: A3.mp3, As4.mp3, etc.";
+            elements.audioErrorMessage.textContent = message;
             popup.classList.remove('hidden');
             
-            setTimeout(hideAudioErrorPopup, 8000); 
+            setTimeout(hideAudioErrorPopup, 10000); // Mostra l'error durant 10s
         }
 
         /**
@@ -381,11 +394,9 @@
          * Reprodueix l'interval generat INSTANTÀNIAMENT utilitzant el CACHE.
          */
         function playInterval() {
-            if (!gameState.isAudioReady) {
-                showAudioErrorPopup("La reproducció no és possible, ja que l'àudio no s'ha precarregat completament.");
-                return;
-            }
-            
+            // No comprovem isAudioReady aquí, ja que volem que el joc funcioni 
+            // amb els arxius que sí que s'han carregat, tot i l'advertència.
+
             // Obtenim els objectes Audio directament del cache utilitzant les claus MIDI
             const audioBase = audioCache[gameState.baseNoteMIDI];
             const audioInterval = audioCache[gameState.intervalNoteMIDI];
@@ -393,6 +404,7 @@
             if (!audioBase || !audioInterval) {
                  elements.feedbackMessage.textContent = 'Error intern: Nota MIDI no trobada al cache.';
                  elements.feedbackMessage.classList.add('text-red-400');
+                 showAudioErrorPopup("La nota requerida no es va carregar correctament.");
                  return;
             }
 
@@ -443,10 +455,7 @@
          * @param {string} difficulty - Nivell seleccionat ('easy', 'medium', 'hard').
          */
         function startGame(difficulty) {
-            if (!gameState.isAudioReady) {
-                 showAudioErrorPopup("L'àudio encara no està precarregat. Espera que la barra de càrrega sigui 100%.");
-                 return;
-            }
+            // Nota: Ja no bloquegem aquí, confiem en que els fitxers carregats funcionaran
             
             gameState.difficulty = difficulty;
             gameState.score = 0;
@@ -480,13 +489,13 @@
             
             // Determina les notes per tal que l'interval s'ajusti al rang
             if (direction === 'Ascendent' || direction === 'Harmònic') {
-                // Per a Ascendent/Harmònic: La nota base ha de ser prou baixa per afegir l'interval sense excedir MIDI_END
+                // Per a Ascendent/Harmònic: La nota base ha d'estar prou baixa
                 const maxBaseMIDI = MIDI_END - intervalSemitones;
                 // Assegura un rang mínim de notes bases (p. ex., de MIDI_START a maxBaseMIDI)
                 baseMIDI = MIDI_START + Math.floor(Math.random() * (maxBaseMIDI - MIDI_START + 1));
                 intervalMIDI = baseMIDI + intervalSemitones;
             } else if (direction === 'Descendent') {
-                // Per a Descendent: La nota d'interval ha de ser prou alta per restar l'interval sense ser inferior a MIDI_START
+                // Per a Descendent: La nota d'interval ha d'estar prou alta
                 const minIntervalMIDI = MIDI_START + intervalSemitones;
                 // Assegura un rang mínim de notes (p. ex., de minIntervalMIDI a MIDI_END)
                 intervalMIDI = minIntervalMIDI + Math.floor(Math.random() * (MIDI_END - minIntervalMIDI + 1));
