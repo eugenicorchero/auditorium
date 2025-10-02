@@ -11,75 +11,91 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f0f4f8; /* Un blanc trencat/gris clar */
+            background-color: #111827; /* Fons fosc (Tailwind gray-900) */
         }
         /* Estil per al botó de reproducció, per fer-lo destacar */
         #playButton {
             transition: all 0.1s ease;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
         }
+        /* Utilitzem un ombrejat Teal en l'estat hover */
         #playButton:hover {
             transform: scale(1.05);
-            box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3), 0 4px 6px -4px rgba(59, 130, 246, 0.2);
+            box-shadow: 0 10px 15px -3px rgba(20, 184, 166, 0.4), 0 4px 6px -4px rgba(20, 184, 166, 0.3);
         }
         /* Estil per a la barra de temps */
         #progressBar {
             transition: width 0.9s linear;
         }
+        /* Estil per al pop-up d'error d'àudio */
+        .audio-error-popup {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 50;
+        }
     </style>
 </head>
 
-<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+<body class="bg-gray-900 min-h-screen flex flex-col items-center justify-center p-4">
 
-    <!-- Contenidor principal de l'aplicació -->
-    <div id="appContainer" class="bg-white shadow-2xl rounded-xl w-full max-w-4xl p-8 md:p-12 border border-gray-200">
+    <!-- POP-UP d'ERROR D'AUDIO (Inicialment amagat) -->
+    <div id="audioErrorPopup" class="audio-error-popup hidden bg-red-600 text-white p-3 rounded-lg shadow-xl max-w-xs transition duration-300 transform scale-100">
+        <p class="font-bold mb-1">⚠️ Error d'Àudio</p>
+        <p class="text-sm">Els fitxers MP3 no s'han trobat a la carpeta **`/audio/`**.</p>
+        <p class="text-xs mt-1 opacity-80">Si us plau, assegura't de carregar-los correctament.</p>
+    </div>
+
+    <!-- Contenidor principal de l'aplicació: Fosc -->
+    <div id="appContainer" class="bg-gray-800 shadow-2xl rounded-xl w-full max-w-4xl p-8 md:p-12 border border-gray-700 mb-4">
 
         <!-- Header/Títol (Visible en totes les pantalles) -->
         <header class="text-center mb-8">
-            <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">Auditorium</h1>
-            <p class="text-xl text-blue-600 font-semibold mt-1">Identificació d'Intervals</p>
+            <h1 class="text-4xl font-extrabold text-white tracking-tight">Auditorium</h1>
+            <p class="text-xl text-teal-400 font-semibold mt-1">Identificació Auditiva d'Intervals</p>
         </header>
 
         <!-- PANTALLA 1: SELECCIÓ DE DIFICULTAT -->
         <div id="difficultyScreen">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Selecciona el Nivell de Dificultat</h2>
+            <h2 class="text-2xl font-bold text-gray-100 mb-6 text-center">Selecciona el Nivell de Dificultat</h2>
             <div class="space-y-4 max-w-lg mx-auto">
-                <button onclick="startGame('easy')" class="w-full py-4 px-6 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-150 shadow-md">
+                <!-- Botons amb el color Teal -->
+                <button onclick="startGame('easy')" class="w-full py-4 px-6 bg-teal-500 text-white font-semibold rounded-lg hover:bg-teal-600 transition duration-150 shadow-md">
                     Fàcil (Uníson, 2M, 3M, 4J, 5J - Ascendents)
                 </button>
-                <button onclick="startGame('medium')" class="w-full py-4 px-6 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-150 shadow-md">
+                <button onclick="startGame('medium')" class="w-full py-4 px-6 bg-teal-500 text-white font-semibold rounded-lg hover:bg-teal-600 transition duration-150 shadow-md">
                     Intermedi (Fàcil + 6M, 7M, 8J - Ascendents)
                 </button>
-                <button onclick="startGame('hard')" class="w-full py-4 px-6 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-150 shadow-md">
+                <button onclick="startGame('hard')" class="w-full py-4 px-6 bg-teal-500 text-white font-semibold rounded-lg hover:bg-teal-600 transition duration-150 shadow-md">
                     Difícil (Tots els 12 Intervals - Ascendent, Descendent, Harmònic)
                 </button>
             </div>
-            <p class="text-center text-sm text-gray-500 mt-6">Assegura't que els arxius d'àudio MP3 es trobin a la carpeta **`/audio/`**.</p>
         </div>
 
         <!-- PANTALLA 2: JOC / QUIZ -->
         <div id="quizScreen" class="hidden">
             <!-- Puntuació i Temporitzador -->
-            <div class="flex justify-between items-center mb-6 border-b pb-4">
-                <div class="text-xl font-medium text-gray-700">Ronda: <span id="roundCount" class="font-bold text-blue-600">1</span></div>
-                <div class="text-xl font-medium text-gray-700">Puntuació: <span id="score" class="font-bold text-blue-600">0</span></div>
+            <div class="flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
+                <div class="text-xl font-medium text-gray-300">Ronda: <span id="roundCount" class="font-bold text-teal-400">1</span></div>
+                <div class="text-xl font-medium text-gray-300">Puntuació: <span id="score" class="font-bold text-teal-400">0</span></div>
             </div>
 
             <!-- Àrea de Reproducció i Temporitzador Visual -->
             <div class="text-center mb-8">
-                <button id="playButton" class="bg-blue-600 text-white p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 hover:bg-blue-700 transition duration-200 focus:outline-none">
+                <!-- Botó de reproducció Teal -->
+                <button id="playButton" class="bg-teal-500 text-white p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 hover:bg-teal-600 transition duration-200 focus:outline-none">
                     <!-- Icona de reproducció (SVG) -->
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
                     </svg>
                 </button>
-                <p id="directionLabel" class="text-lg font-semibold text-gray-600 mb-4"></p>
+                <p id="directionLabel" class="text-lg font-semibold text-gray-300 mb-4"></p>
 
                 <!-- Barra de progrés del temporitzador (30 segons) -->
-                <div class="w-full bg-gray-200 rounded-full h-2.5">
-                    <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full" style="width: 100%"></div>
+                <div class="w-full bg-gray-700 rounded-full h-2.5">
+                    <div id="progressBar" class="bg-teal-500 h-2.5 rounded-full" style="width: 100%"></div>
                 </div>
-                <p class="text-sm text-gray-500 mt-2">Temps restant per escoltar: <span id="timeRemaining">30</span>s</p>
+                <p class="text-sm text-gray-400 mt-2">Temps restant per escoltar: <span id="timeRemaining">30</span>s</p>
             </div>
 
             <!-- Botons d'Opció d'Interval (Es generaran per JS) -->
@@ -91,23 +107,30 @@
             <div id="feedbackMessage" class="mt-6 text-center text-lg font-bold min-h-6"></div>
 
             <!-- Botó de següent ronda (inicialment amagat) -->
-            <button id="nextRoundButton" onclick="loadNextRound()" class="hidden w-full py-3 mt-6 bg-gray-800 text-white font-semibold rounded-lg hover:bg-gray-700 transition duration-150 shadow-lg">
+            <button id="nextRoundButton" onclick="loadNextRound()" class="hidden w-full py-3 mt-6 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-600 transition duration-150 shadow-lg">
                 Següent Ronda
             </button>
         </div>
 
         <!-- PANTALLA 3: RESULTATS FINALS -->
         <div id="resultScreen" class="hidden text-center">
-            <h2 class="text-3xl font-bold text-gray-800 mb-4">Resultats Finals</h2>
-            <p class="text-xl text-gray-600 mb-6">Has completat la pràctica!</p>
-            <p class="text-4xl font-extrabold text-blue-600 mb-8">Puntuació Final: <span id="finalScore">0</span></p>
+            <h2 class="text-3xl font-bold text-gray-100 mb-4">Resultats Finals</h2>
+            <p class="text-xl text-gray-400 mb-6">Has completat la pràctica!</p>
+            <p class="text-4xl font-extrabold text-teal-400 mb-8">Puntuació Final: <span id="finalScore">0</span></p>
 
-            <button onclick="resetGame()" class="w-full py-4 px-6 bg-gray-800 text-white font-semibold rounded-lg hover:bg-blue-600 transition duration-150 shadow-md">
+            <!-- Botó de reset amb color principal -->
+            <button onclick="resetGame()" class="w-full py-4 px-6 bg-teal-500 text-white font-semibold rounded-lg hover:bg-teal-600 transition duration-150 shadow-md">
                 Tornar a començar
             </button>
         </div>
 
     </div>
+    
+    <!-- Footer/Copyright -->
+    <footer class="text-center text-sm text-gray-400 mt-4 max-w-4xl w-full">
+        <p>Copyright &copy; Eugeni Corchero 2025</p>
+    </footer>
+
 
     <!-- LÒGICA JAVASCRIPT -->
     <script>
@@ -119,6 +142,7 @@
         const MIDI_START = 57; // A3 (Nota més baixa)
         const MIDI_END = 72;   // C5 (Nota més alta)
         const TIMER_DURATION = 30; // Temps en segons
+        const TEST_FILE = 'C4.mp3'; // Fitxer de prova per comprovar la ruta
 
         // Mapa de semitons a noms d'intervals (per a opcions i resposta)
         const INTERVAL_NAMES = {
@@ -160,6 +184,7 @@
             audioBase: null,
             audioInterval: null,
             currentInterval: null,
+            isAudioReady: false, // Nou estat per la comprovació d'àudio
         };
 
         // Referències al DOM
@@ -178,13 +203,57 @@
             feedbackMessage: document.getElementById('feedbackMessage'),
             nextRoundButton: document.getElementById('nextRoundButton'),
             directionLabel: document.getElementById('directionLabel'),
-            finalScore: document.getElementById('finalScore')
+            finalScore: document.getElementById('finalScore'),
+            audioErrorPopup: document.getElementById('audioErrorPopup'),
         };
 
 
         // ===============================================
         // UTILS D'ÀUDIO I MIDI
         // ===============================================
+        
+        /**
+         * Comprova si almenys un fitxer d'àudio es pot carregar correctament 
+         * per determinar si la ruta /audio/ és accessible.
+         */
+        function checkAudioAccessibility() {
+            const testAudio = new Audio(AUDIO_PATH + TEST_FILE);
+            
+            // Si el fitxer es carrega amb èxit (fins i tot si el reprodueix), l'àudio és accessible.
+            testAudio.oncanplaythrough = () => {
+                gameState.isAudioReady = true;
+                hideAudioErrorPopup();
+                testAudio.oncanplaythrough = null; // Neteja l'event listener
+            };
+            
+            // Si hi ha un error de càrrega, la ruta o el fitxer no existeixen.
+            testAudio.onerror = () => {
+                gameState.isAudioReady = false;
+                showAudioErrorPopup();
+                testAudio.onerror = null; // Neteja l'event listener
+            };
+
+            // Intentar carregar per forçar els events
+            testAudio.load();
+        }
+
+        /**
+         * Mostra el pop-up d'error d'àudio.
+         */
+        function showAudioErrorPopup() {
+            elements.audioErrorPopup.classList.remove('hidden');
+            
+            // Amagar-lo automàticament al cap d'un temps
+            setTimeout(hideAudioErrorPopup, 8000); 
+        }
+
+        /**
+         * Amaga el pop-up d'error d'àudio.
+         */
+        function hideAudioErrorPopup() {
+            elements.audioErrorPopup.classList.add('hidden');
+        }
+
 
         /**
          * Converteix un número MIDI a nom de fitxer MP3 (ex: 60 -> C4.mp3)
@@ -192,15 +261,11 @@
          * @returns {string} El nom del fitxer (incloent la ruta).
          */
         function getFileName(midiNumber) {
-            // L'usuari ha confirmat que utilitza 's' per als sostinguts (As3.mp3, Cs4.mp3, etc.)
             const notes = ['C', 'Cs', 'D', 'Ds', 'E', 'F', 'Fs', 'G', 'Gs', 'A', 'As', 'B'];
             const octave = Math.floor(midiNumber / 12) - 1;
             const noteIndex = midiNumber % 12;
             const noteName = notes[noteIndex];
             
-            // Retorna el nom del fitxer amb la convenció 'XsY.mp3'.
-            // S'eliminen les substitucions de cadena anteriors que transformaven 's' en '#',
-            // que eren la causa del NotSupportedError.
             return `${AUDIO_PATH}${noteName}${octave}.mp3`;
         }
 
@@ -208,8 +273,12 @@
          * Reprodueix l'interval generat segons la direcció.
          */
         function playInterval() {
-            if (!gameState.audioBase || !gameState.audioInterval) {
-                elements.feedbackMessage.textContent = 'Error: No s\'ha pogut carregar l\'àudio. Comprova la ruta.';
+            if (!gameState.isAudioReady) {
+                // Si l'àudio no està preparat, mostra l'error sense intentar reproduir
+                showAudioErrorPopup();
+                elements.feedbackMessage.textContent = 'Error: L\'àudio no està disponible. Carrega els MP3.';
+                elements.feedbackMessage.classList.remove('text-green-600');
+                elements.feedbackMessage.classList.add('text-red-600');
                 return;
             }
 
@@ -255,6 +324,12 @@
          * @param {string} difficulty - Nivell seleccionat ('easy', 'medium', 'hard').
          */
         function startGame(difficulty) {
+            // No permetre iniciar si l'àudio no està preparat, però només a la primera ronda
+            if (!gameState.isAudioReady && gameState.round === 0) {
+                 showAudioErrorPopup();
+                 return;
+            }
+            
             gameState.difficulty = difficulty;
             gameState.score = 0;
             gameState.round = 0;
@@ -299,17 +374,12 @@
             } else if (direction === 'Descendent') {
                 intervalMIDI = baseMIDI - intervalSemitones;
             }
-            // Per al nivell difícil descendet, la nota base pot estar a dalt, i la d'interval a baix
-            // Per simplificació i per mantenir la nota base com la primera a tocar (o la més baixa en harmònic)
-            // Lògica ajustada: BaseMIDI sempre és la nota més baixa per a Ascendent/Harmònic
-            // Per a Descendent, la nota més ALTA ha de ser baseMIDI (base per al descens)
             
             if (direction === 'Descendent') {
                 // Nota base alta, nota interval baixa
                 const highNoteMIDI = MIDI_START + intervalSemitones + Math.floor(Math.random() * (MIDI_END - (MIDI_START + intervalSemitones) + 1));
                 intervalMIDI = highNoteMIDI - intervalSemitones;
                 
-                // Reassignar per la funció de reproducció (base ha de ser la primera a sonar)
                 // L'àudio base és la nota ALTA, l'àudio interval és la nota BAIXA
                 const baseFile = getFileName(highNoteMIDI);
                 const intervalFile = getFileName(intervalMIDI);
@@ -348,16 +418,22 @@
             elements.feedbackMessage.textContent = '';
             elements.nextRoundButton.classList.add('hidden');
             elements.roundCount.textContent = gameState.round;
-            elements.playButton.disabled = false;
-            elements.playButton.classList.remove('opacity-50');
-
+            
             // 1. Genera un nou interval i carrega l'àudio
             gameState.currentInterval = generateInterval();
             gameState.correctIntervalSemitones = gameState.currentInterval.correctIntervalSemitones;
             gameState.currentDirection = gameState.currentInterval.direction;
 
-            gameState.audioBase = new Audio(gameState.currentInterval.audioBaseFile);
-            gameState.audioInterval = new Audio(gameState.currentInterval.audioIntervalFile);
+            // Només intentar carregar els nous àudios si la ruta és accessible
+            if (gameState.isAudioReady) {
+                 elements.playButton.disabled = false;
+                 elements.playButton.classList.remove('opacity-50');
+                 gameState.audioBase = new Audio(gameState.currentInterval.audioBaseFile);
+                 gameState.audioInterval = new Audio(gameState.currentInterval.audioIntervalFile);
+            } else {
+                 elements.playButton.disabled = true;
+                 elements.playButton.classList.add('opacity-50');
+            }
 
             elements.directionLabel.textContent = `Direcció: ${gameState.currentDirection}`;
             
@@ -384,7 +460,8 @@
                 button.textContent = name;
                 button.setAttribute('data-semitones', semitones);
                 button.onclick = () => checkAnswer(semitones, button);
-                button.classList.add('py-3', 'px-4', 'bg-gray-200', 'text-gray-800', 'font-semibold', 'rounded-lg', 'shadow-sm', 'hover:bg-blue-200', 'transition', 'duration-150', 'text-sm', 'md:text-base');
+                // Classes actualitzades per a fons fosc
+                button.classList.add('py-3', 'px-4', 'bg-gray-700', 'text-gray-100', 'font-semibold', 'rounded-lg', 'shadow-sm', 'hover:bg-teal-500', 'hover:text-white', 'transition', 'duration-150', 'text-sm', 'md:text-base');
                 elements.intervalOptions.appendChild(button);
             });
         }
@@ -407,7 +484,8 @@
             // Deshabilita tots els botons d'opció
             Array.from(elements.intervalOptions.children).forEach(btn => {
                 btn.disabled = true;
-                btn.classList.remove('hover:bg-blue-200', 'bg-gray-200');
+                // Neteja les classes de fons/hover originals (dark mode)
+                btn.classList.remove('hover:bg-teal-500', 'bg-gray-700'); 
                 btn.classList.add('cursor-not-allowed', 'opacity-80');
 
                 const currentSemitones = parseInt(btn.getAttribute('data-semitones'));
@@ -426,11 +504,11 @@
                 elements.score.textContent = gameState.score;
                 elements.feedbackMessage.textContent = '✅ Correcte! ' + gameState.currentInterval.label;
                 elements.feedbackMessage.classList.remove('text-red-600');
-                elements.feedbackMessage.classList.add('text-green-600');
+                elements.feedbackMessage.classList.add('text-green-400'); // Green 400 queda millor en fons fosc
             } else {
                 elements.feedbackMessage.textContent = '❌ Incorrecte. La resposta era: ' + gameState.currentInterval.label;
                 elements.feedbackMessage.classList.remove('text-green-600');
-                elements.feedbackMessage.classList.add('text-red-600');
+                elements.feedbackMessage.classList.add('text-red-400'); // Red 400 queda millor en fons fosc
             }
 
             elements.nextRoundButton.classList.remove('hidden');
@@ -459,7 +537,7 @@
                         // Si el temps s'esgota sense resposta
                         elements.feedbackMessage.textContent = '⏱️ Temps esgotat!';
                         elements.feedbackMessage.classList.remove('text-green-600');
-                        elements.feedbackMessage.classList.add('text-red-600');
+                        elements.feedbackMessage.classList.add('text-red-400');
                         elements.nextRoundButton.classList.remove('hidden');
                         gameState.isAnswered = true;
 
@@ -493,6 +571,8 @@
             showScreen('difficulty');
             gameState.score = 0;
             gameState.round = 0;
+            // Reforça la comprovació d'àudio al reiniciar
+            checkAudioAccessibility(); 
         }
 
 
@@ -500,13 +580,11 @@
         // INICIALITZACIÓ
         // ===============================================
 
-        // Assigna l'esdeveniment al botó de reproducció un cop carregat el DOM
         window.onload = function() {
-            // El botó de reproducció només és visible a la pantalla del quiz
             elements.playButton.onclick = playInterval; 
             
-            // Podries afegir una lògica per canviar a endGame() després de 10 rondes (per exemple)
-            // Per simplicitat, el joc no acaba automàticament.
+            // 1. Comprova l'accessibilitat de l'àudio tan bon punt es carrega l'aplicació
+            checkAudioAccessibility();
         };
 
     </script>
