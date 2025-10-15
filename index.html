@@ -202,7 +202,7 @@
         // Mapa de semitons a noms d'intervals 
         const INTERVAL_NAMES = {
             0: 'Uníson', 1: '2a menor', 2: '2a Major', 3: '3a menor',
-            4: '3a Major', 5: '4a Justa', 6: 'Tríton', 
+            4: '3a Major', 5: '4a Justa', 6: 'Tritò', 
             7: '5a Justa', 8: '6a menor', 9: '6a Major',
             10: '7a menor', 11: '7a Major', 12: '8a Justa'
         };
@@ -290,52 +290,82 @@
         }
         
         /**
-         * Precàrrega (Pre-load) de tots els fitxers d'àudio.
-         */
-        function preloadAllAudio() {
-            return new Promise((resolve, reject) => {
-                let notesLoaded = 0;
-                let errors = 0;
-                let failedFiles = [];
+ * Precàrrega (Pre-load) de tots els fitxers d'àudio, amb càrrega per lots i barra de progrés visible.
+ */
+function preloadAllAudio(batchSize = 10) {
+    return new Promise(async (resolve, reject) => {
+        let notesLoaded = 0;
+        let errors = 0;
+        let failedFiles = [];
 
-                const onLoaded = (midiNumber, isError) => {
+        console.log(`🔊 Iniciant precàrrega d'àudios (${TOTAL_MIDI_NOTES} fitxers, lots de ${batchSize})...`);
+
+        // Mostrem la barra i l'status, per si estaven amagats
+        elements.loadingOverlay.classList.remove('hidden');
+        elements.preloaderBar.style.width = '0%';
+        elements.preloaderStatus.textContent = 'Carregant àudios...';
+
+        // Preparem la llista completa d’arxius
+        const midiNumbers = [];
+        for (let midi = MIDI_START; midi <= MIDI_END; midi++) {
+            midiNumbers.push(midi);
+        }
+
+        // Funció auxiliar per actualitzar la barra i el text
+        const updateProgress = () => {
+            const percentage = Math.round((notesLoaded / TOTAL_MIDI_NOTES) * 100);
+            elements.preloaderBar.style.width = `${percentage}%`;
+            elements.preloaderStatus.textContent =
+                `Carregades ${notesLoaded}/${TOTAL_MIDI_NOTES} notes. ${errors > 0 ? '(' + errors + ' errors)' : ''}`;
+        };
+
+        // Càrrega en grups petits
+        for (let i = 0; i < midiNumbers.length; i += batchSize) {
+            const batch = midiNumbers.slice(i, i + batchSize);
+
+            const promises = batch.map(midi => new Promise(resolveBatch => {
+                const fileName = getFileName(midi);
+                const audio = new Audio(fileName);
+                audioCache[midi] = audio;
+
+                const onFinish = (isError) => {
                     notesLoaded++;
-                    if (isError) errors++;
-                    
-                    const percentage = Math.round((notesLoaded / TOTAL_MIDI_NOTES) * 100);
-                    elements.preloaderBar.style.width = `${percentage}%`;
-                    elements.preloaderStatus.textContent = `Carregades ${notesLoaded}/${TOTAL_MIDI_NOTES} notes. ${errors > 0 ? '(' + errors + ' errors)' : ''}`;
-
-                    if (notesLoaded === TOTAL_MIDI_NOTES) {
-                        if (errors === 0) {
-                            console.log("Precàrrega OK: Tots els fitxers s'han trobat.");
-                            resolve();
-                        } else {
-                            console.error(`Precàrrega ERROR: ${errors} fitxers fallits.`, failedFiles);
-                            reject({
-                                errorCount: errors,
-                                failedFiles: failedFiles
-                            });
-                        }
+                    if (isError) {
+                        errors++;
+                        failedFiles.push(fileName);
+                        console.warn(`⚠️ Fallada en carregar: ${fileName}`);
                     }
+                    updateProgress();
+                    resolveBatch();
                 };
 
-                for (let midi = MIDI_START; midi <= MIDI_END; midi++) {
-                    const fileName = getFileName(midi);
-                    const audio = new Audio(fileName);
-                    
-                    audioCache[midi] = audio; 
+                audio.oncanplaythrough = () => onFinish(false);
+                audio.onerror = (e) => onFinish(true);
+                audio.load();
+            }));
 
-                    audio.oncanplaythrough = () => onLoaded(midi, false);
-                    audio.onerror = (e) => {
-                        console.error(`Error de càrrega per a la nota MIDI ${midi} (${fileName}).`, e);
-                        failedFiles.push(fileName);
-                        onLoaded(midi, true); 
-                    };
-                    audio.load();
-                }
-            });
+            await Promise.all(promises);
+
+            // Petita pausa per donar respir a Safari i iOS
+            await new Promise(r => setTimeout(r, 200));
         }
+
+        // Resultat final
+        if (errors === 0) {
+            console.log("✅ Precàrrega OK: tots els fitxers carregats correctament.");
+            elements.preloaderStatus.textContent = 'Precàrrega completada. Preparant joc...';
+            setTimeout(() => {
+                resolve();
+            }, 800); // petita pausa per suavitzar la transició
+        } else {
+            console.warn(`⚠️ Precàrrega finalitzada amb ${errors} fitxers fallits.`);
+            console.table(failedFiles);
+            elements.preloaderStatus.textContent = `Precàrrega finalitzada amb ${errors} errors.`;
+            reject({ errorCount: errors, failedFiles });
+        }
+    });
+}
+
         
         /**
          * Comprova i inicia la precàrrega.
