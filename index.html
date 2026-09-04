@@ -16,7 +16,6 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Targeta estil Glassmorphism */
         .glass-card {
             background: rgba(15, 23, 42, 0.75);
             backdrop-filter: blur(16px);
@@ -24,7 +23,6 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
-        /* Botó de Play Pulsant i Animacions */
         @keyframes pulse-ring {
             0% { transform: scale(0.95); opacity: 0.8; }
             50% { transform: scale(1.05); opacity: 0.4; }
@@ -47,7 +45,6 @@
             z-index: 100;
         }
 
-        /* Transició suau per als botons de dificultat i opcions */
         .btn-interactive {
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -151,7 +148,6 @@
                 <!-- Àrea Principal de Reproducció -->
                 <div class="text-center my-2 sm:my-4 flex flex-col items-center">
                     
-                    <!-- Botó de Reproducció Gran i Tàctil -->
                     <button id="playButton" class="relative group bg-blue-600 text-white p-5 sm:p-6 rounded-full w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center shadow-xl shadow-blue-600/30 hover:bg-blue-500 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
                         <span class="absolute inset-0 rounded-full bg-blue-500 play-btn-pulse -z-10 opacity-75"></span>
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10 translate-x-0.5" viewBox="0 0 20 20" fill="currentColor">
@@ -162,7 +158,6 @@
                     <p id="directionLabel" class="text-xs sm:text-sm font-medium text-slate-400 mt-3 bg-slate-800/50 px-3 py-1 rounded-full border border-slate-700/50 inline-block"></p>
                     <p id="debugNotes" class="hidden text-xs text-slate-500 mt-1"></p> 
 
-                    <!-- Temporitzador de barra -->
                     <div class="w-full bg-slate-800/80 rounded-full h-2 mt-4 sm:mt-6 overflow-hidden border border-slate-700/30">
                         <div id="progressBar" class="bg-blue-500 h-full rounded-full" style="width: 100%"></div>
                     </div>
@@ -172,15 +167,12 @@
                     </div>
                 </div>
 
-                <!-- Botons d'Opció d'Interval (Responsivitat optimitzada per a mòbils) -->
                 <div id="intervalOptions" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-2.5 mt-4 sm:mt-6">
                     <!-- Botons injectats via JS -->
                 </div>
                 
-                <!-- Feedback del Resultat -->
                 <div id="feedbackMessage" class="mt-4 text-center text-sm sm:text-base font-bold min-h-[1.75rem] flex items-center justify-center"></div>
 
-                <!-- Botó Següent Ronda -->
                 <button id="nextRoundButton" class="hidden btn-interactive w-full py-3.5 mt-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-900/40 transition">
                     Següent Ronda →
                 </button>
@@ -210,12 +202,11 @@
         </div>
     </main>
     
-    <!-- Footer/Copyright -->
     <footer class="text-center text-xs text-slate-500 py-3 w-full">
         <p>Copyright &copy; Eugeni Corchero 2025</p>
     </footer>
 
-    <!-- LÒGICA JAVASCRIPT INTEGRAL -->
+    <!-- LÒGICA JAVASCRIPT INTEGRAL REVISADA -->
     <script>
         const AUDIO_PATH = './audio/'; 
         const MIDI_START = 57; // A3
@@ -380,6 +371,7 @@
             elements.audioErrorPopup.classList.add('hidden');
         }
 
+        /* REPRODUCCIÓ D'ÀUDIO CORRIGIDA PER A L'UNÍSON */
         function playInterval() {
             const audioBase = audioCache[gameState.baseNoteMIDI];
             const audioInterval = audioCache[gameState.intervalNoteMIDI];
@@ -400,13 +392,18 @@
             const direction = gameState.currentDirection;
             
             try {
-                if (direction === 'Harmònic' || gameState.correctIntervalSemitones === 0) {
+                // Harmònic pur (només intervals diferents d'uníson)
+                if (direction === 'Harmònic') {
                     resetAndPlay(audioBase);
-                    if (gameState.correctIntervalSemitones !== 0) resetAndPlay(audioInterval); 
-                } else if (direction === 'Ascendent') {
+                    resetAndPlay(audioInterval); 
+                } 
+                // Reproducció Melòdica (Ascendent / Descendent / Uníson)
+                else if (direction === 'Ascendent' || gameState.correctIntervalSemitones === 0) {
                     resetAndPlay(audioBase);
+                    // Segona nota melòdica (fins i tot si és la mateixa nota d'uníson)
                     setTimeout(() => resetAndPlay(audioInterval), NOTE_DELAY_MS);
-                } else if (direction === 'Descendent') {
+                } 
+                else if (direction === 'Descendent') {
                     resetAndPlay(audioInterval);
                     setTimeout(() => resetAndPlay(audioBase), NOTE_DELAY_MS);
                 }
@@ -429,6 +426,7 @@
             loadNextRound();
         }
 
+        /* GENERACIÓ D'INTERVALS REVISADA */
         function generateInterval() {
             const config = DIFFICULTY_CONFIG[gameState.difficulty];
             const availableIntervals = config.intervals;
@@ -436,8 +434,13 @@
             const intervalSemitones = availableIntervals[Math.floor(Math.random() * availableIntervals.length)];
 
             let direction = 'Ascendent';
+            
+            // SI ÉS UNÍSON (0 semitons), NUNCA SERÀ HARMÒNIC: FORÇAM DIRECCIÓ MELÒDICA
             if (intervalSemitones === 0) {
-                direction = 'Harmònic'; 
+                const melodicDirections = config.directions.filter(d => d !== 'Harmònic');
+                direction = melodicDirections.length > 0 
+                    ? melodicDirections[Math.floor(Math.random() * melodicDirections.length)] 
+                    : 'Ascendent';
             } else if (config.directions.length > 0) {
                 direction = config.directions[Math.floor(Math.random() * config.directions.length)];
             }
@@ -455,10 +458,10 @@
             if (minStartMIDI > maxStartMIDI) {
                 return {
                     correctIntervalSemitones: 0, 
-                    direction: 'Harmònic',
+                    direction: 'Ascendent',
                     baseNoteMIDI: MIDI_START, 
                     intervalNoteMIDI: MIDI_START,
-                    label: 'ERROR'
+                    label: 'Uníson'
                 }; 
             }
 
